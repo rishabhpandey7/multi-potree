@@ -12,7 +12,7 @@ import {ProfileWindow, ProfileWindowController} from "./profile.js";
 import {BoxVolume} from "../utils/Volume.js";
 import {Features} from "../Features.js";
 import {Message} from "../utils/Message.js";
-import {Sidebar} from "./sidebar.js";
+import {Sidebar1} from "./sidebar1.js";
 import {Sidebar2} from "./sidebar2.js";
 import {AnnotationTool} from "../utils/AnnotationTool.js";
 import {MeasuringTool} from "../utils/MeasuringTool.js";
@@ -1243,7 +1243,7 @@ export class DoubleViewer extends EventDispatcher{
 
 			$(() => {
 				//initSidebar(this);
-				let sidebar = new Sidebar(this);
+				let sidebar = new Sidebar1(this);
 				sidebar.init();
 
 				this.sidebar = sidebar;

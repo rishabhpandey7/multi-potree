@@ -1,4 +1,3 @@
-
 import {GeoJSONExporter} from "../exporter/GeoJSONExporter.js"
 import {DXFExporter} from "../exporter/DXFExporter.js"
 import {Volume, SphereVolume} from "../utils/Volume.js"
@@ -27,7 +26,7 @@ export class Sidebar{
 		this.profileTool = viewer.profileTool;
 		this.volumeTool = viewer.volumeTool;
 
-		this.dom = $("#potree_sidebar_container1").find("#sidebar_root");
+		this.dom = $("#potree_sidebar_container").find("#sidebar_root");
 	}
 
 	createToolIcon(icon, title, callback){

@@ -34,6 +34,8 @@
 	<!-- INCLUDE SETTINGS HERE -->
 	
 	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
+		<input id="sync_viewers" type="checkbox" />
+		<label for="sync_viewers"> Sync </label><br>
 		<div id="potree_render_area1" style="background-image: url('../build/potree/resources/images/background.jpg');"></div>
 		<div id="potree_sidebar_container1"> </div>
 		<div id="potree_render_area2" style="background-image: url('../build/potree/resources/images/background.jpg');"></div>
@@ -49,7 +51,7 @@
 		viewer1.setPointBudget(1*1000*1000);
 		viewer1.loadSettingsFromURL();
 		
-		viewer1.setDescription("Test Viewer");
+		viewer1.setDescription("Tester");
 		
 		viewer1.loadGUI(() => {
 			viewer1.setLanguage('en');
@@ -105,6 +107,57 @@
 			
 			viewer2.fitToScreen();
 		});
+
+
+ 		let checkbox = $("#sync_viewers")[0];
+
+ 		$(document).ready(checkbox.addEventListener('change', function() {
+			let options = {
+				characterData : true,
+				childList: true
+			}
+			let observer = new MutationObserver(fovCallback);
+			let fieldOfView = $("#potree_sidebar_container1").find("#lblFOV");
+			let moveSpeed = $("#potree_sidebar_container1").find("#lblMoveSpeed");
+
+			function fovCallback(mutations) {
+  				for (let mutation of mutations) {
+    				if (mutation.type === 'childList') {
+      					console.log('Mutation Detected: ' + viewer1.getFOV() + ' has been altered.');
+      					viewer2.setFOV(parseInt(viewer1.getFOV()));
+    				}
+  				}
+ 			}
+ 			function speedCallback(mutations) {
+  				for (let mutation of mutations) {
+    				if (mutation.type === 'childList') {
+      					console.log('Mutation Detected: ' + viewer1.getMoveSpeed() + 'speed has been altered.');
+      					viewer2.setMoveSpeed(parseInt(viewer1.getMoveSpeed()));
+    				}
+  				}
+ 			}	 
+  			if (this.checked) {
+    			observer.observe(fieldOfView[0],options);
+    			//observer.observe(moveSpeed[0],options);
+    			console.log("check on")
+  			} else if(!this.checked){
+    			observer.disconnect();
+    			console.log("check off") 	
+  			}
+		})); 
+
+
+ 		/*checkbox.addEventListener('change', function() {
+  			if (this.checked) {
+    			//observer.observe(field,options);
+    			console.log("madar")
+  			} else {
+    			//observer.disconnect();
+    			console.log("chod") 	
+  			}
+		});
+*/
+
 		
 	</script>
 	

@@ -17,7 +17,7 @@ import {Images360} from "../modules/Images360/Images360.js";
 
 import JSON5 from "../../libs/json5-2.1.3/json5.mjs";
 
-export class Sidebar2{
+export class Sidebar1{
 
 	constructor(viewer){
 		this.viewer = viewer;
@@ -26,7 +26,7 @@ export class Sidebar2{
 		this.profileTool = viewer.profileTool;
 		this.volumeTool = viewer.volumeTool;
 
-		this.dom = $("#potree_sidebar_container2").find("#sidebar_root");
+		this.dom = $("#potree_sidebar_container1").find("#sidebar_root");
 	}
 
 	createToolIcon(icon, title, callback){
@@ -66,7 +66,7 @@ export class Sidebar2{
 			Potree.resourcePath + '/icons/angle.png',
 			'[title]tt.angle_measurement',
 			() => {
-				//this.dom.find('#menu_measurements').next().slideDown();
+				this.dom.find('#menu_measurements').next().slideDown();
 				let measurement = this.measuringTool.startInsertion({
 					showDistances: false,
 					showAngles: true,
@@ -294,7 +294,7 @@ export class Sidebar2{
 
 	initScene(){
 
-		let elScene = this.dom.find("#menu_scene");
+		let elScene = $("#menu_scene");
 		let elObjects = elScene.next().find("#scene_objects");
 		let elProperties = elScene.next().find("#scene_object_properties");
 		
@@ -597,7 +597,7 @@ export class Sidebar2{
 			this.annotationMapping.set(annotation, annotationID);
 
 			annotation.addEventListener("annotation_changed", (e) => {
-				let annotationsRoot = this.dom.find("#jstree_scene").jstree().get_json("annotations");
+				let annotationsRoot = $("#jstree_scene").jstree().get_json("annotations");
 				let jsonNode = annotationsRoot.children.find(child => child.data.uuid === annotation.uuid);
 				
 				$.jstree.reference(jsonNode.id).rename_node(jsonNode.id, annotation.title);
@@ -645,7 +645,7 @@ export class Sidebar2{
 			const geopackage = e.geopackage;
 
 			const geopackageIcon = `${Potree.resourcePath}/icons/triangle.svg`;
-			const tree = this.dom.find(`#jstree_scene`);
+			const tree = $(`#jstree_scene`);
 			const parentNode = "vectors";
 
 			for(const layer of geopackage.node.children){
@@ -675,28 +675,28 @@ export class Sidebar2{
 		this.viewer.scene.annotations.addEventListener("annotation_added", onAnnotationAdded);
 
 		let onMeasurementRemoved = (e) => {
-			let measurementsRoot = this.dom.find("#jstree_scene").jstree().get_json("measurements");
+			let measurementsRoot = $("#jstree_scene").jstree().get_json("measurements");
 			let jsonNode = measurementsRoot.children.find(child => child.data.uuid === e.measurement.uuid);
 			
 			tree.jstree("delete_node", jsonNode.id);
 		};
 
 		let onVolumeRemoved = (e) => {
-			let measurementsRoot = this.dom.find("#jstree_scene").jstree().get_json("measurements");
+			let measurementsRoot = $("#jstree_scene").jstree().get_json("measurements");
 			let jsonNode = measurementsRoot.children.find(child => child.data.uuid === e.volume.uuid);
 			
 			tree.jstree("delete_node", jsonNode.id);
 		};
 
 		let onPolygonClipVolumeRemoved = (e) => {
-			let measurementsRoot = this.dom.find("#jstree_scene").jstree().get_json("measurements");
+			let measurementsRoot = $("#jstree_scene").jstree().get_json("measurements");
 			let jsonNode = measurementsRoot.children.find(child => child.data.uuid === e.volume.uuid);
 			
 			tree.jstree("delete_node", jsonNode.id);
 		};
 
 		let onProfileRemoved = (e) => {
-			let measurementsRoot = this.dom.find("#jstree_scene").jstree().get_json("measurements");
+			let measurementsRoot = $("#jstree_scene").jstree().get_json("measurements");
 			let jsonNode = measurementsRoot.children.find(child => child.data.uuid === e.profile.uuid);
 			
 			tree.jstree("delete_node", jsonNode.id);
@@ -1335,7 +1335,7 @@ export class Sidebar2{
 		});
 
 		this.viewer.addEventListener('background_changed', (event) => {
-			this.dom.find("input[name=background_options][value='" + this.viewer.getBackground() + "']").prop('checked', true);
+			this.dom.find("input[name=background][value='" + this.viewer.getBackground() + "']").prop('checked', true);
 		});
 
 		this.dom.find('#lblPointBudget')[0].innerHTML = Utils.addCommas(this.viewer.getPointBudget());
