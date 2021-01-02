@@ -113,14 +113,20 @@
 
  		$(document).ready(checkbox.addEventListener('change', function() {
 			let options = {
-				characterData : true,
-				childList: true
+				attributes: true,
+  				attributeOldValue: true,
+  				characterData: true,
+  				characterDataOldValue: true,
+  				childList: true,
+  				subtree: true
 			}
-			let observer = new MutationObserver(fovCallback);
+			let observer = new MutationObserver(subscriber);
 			let fieldOfView = $("#potree_sidebar_container1").find("#lblFOV");
 			let moveSpeed = $("#potree_sidebar_container1").find("#lblMoveSpeed");
+			let sidebar = $("#potree_sidebar_container1").find("#sidebar_root");
 
 			function fovCallback(mutations) {
+				console.log(mutations);
   				for (let mutation of mutations) {
     				if (mutation.type === 'childList') {
       					console.log('Mutation Detected: ' + viewer1.getFOV() + ' has been altered.');
@@ -128,17 +134,43 @@
     				}
   				}
  			}
- 			function speedCallback(mutations) {
+ 			function subscriber(mutations) {
   				for (let mutation of mutations) {
+  					console.log("viewer2 bg = " + viewer2.getBackground());
     				if (mutation.type === 'childList') {
-      					console.log('Mutation Detected: ' + viewer1.getMoveSpeed() + 'speed has been altered.');
-      					viewer2.setMoveSpeed(parseInt(viewer1.getMoveSpeed()));
+    					console.log('id: ' + mutation.target.id + ' was changed.');
+      					if(mutation.target.id === 'lblFOV'){
+      						viewer2.setFOV(parseFloat(viewer1.getFOV()));
+      					}
+      					else if(mutation.target.id === 'lblPointBudget'){
+      						viewer2.setPointBudget(parseFloat(viewer1.getPointBudget()));
+      					}
+      					else if(mutation.target.id === 'lblEDLRadius'){
+      						viewer2.setEDLRadius(parseFloat(viewer1.getEDLRadius()));
+      					}
+      					else if(mutation.target.id === 'lblEDLStrength'){
+      						viewer2.setEDLStrength(parseFloat(viewer1.getEDLStrength()));
+      					}
+      					else if(mutation.target.id === 'lblMinNodeSize'){
+      						viewer2.setMinNodeSize(parseFloat(viewer1.getMinNodeSize()));
+      					}
+      					else if(mutation.target.id === 'lblMoveSpeed'){
+      						viewer2.setMoveSpeed(parseFloat(viewer1.getMoveSpeed()));
+      					}
+      					//viewer2.setMoveSpeed(parseFloat(viewer1.getMoveSpeed()));
+    				}
+    				else if(mutation.type === 'attributes'){
+    					console.log('id: ' + mutation.target.className + ' was changed.');
+    					if(mutation.target.className == 'sp-alpha'){
+    						viewer2.setEDLOpacity(parseFloat(viewer1.getEDLOpacity()));
+    						console.log(viewer1.getEDLOpacity() + " : " + viewer2.getEDLOpacity());
+    					}
     				}
   				}
  			}	 
   			if (this.checked) {
-    			observer.observe(fieldOfView[0],options);
-    			//observer.observe(moveSpeed[0],options);
+    			//observer.observe(fieldOfView[0],options);
+    			observer.observe(sidebar[0],options);
     			console.log("check on")
   			} else if(!this.checked){
     			observer.disconnect();
