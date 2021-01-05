@@ -888,3 +888,7 @@ body{
 	padding-top: 0.6em;
 	padding-bottom: 0.1em;
 }
+
+button {
+  margin: 3px;
+}

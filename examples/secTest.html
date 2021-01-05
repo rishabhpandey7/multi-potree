@@ -35,7 +35,9 @@
 	
 	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
 		<input id="sync_viewers" type="checkbox" />
-		<label for="sync_viewers"> Sync </label><br>
+		<label for="sync_viewers"> Sync </label><br>  
+		<!-- <button class="btnStart">Start Observing</button>  -->
+		<button class="btnStop" disabled>Stop Observing</button>
 		<div id="potree_render_area1" style="background-image: url('../build/potree/resources/images/background.jpg');"></div>
 		<div id="potree_sidebar_container1"> </div>
 		<div id="potree_render_area2" style="background-image: url('../build/potree/resources/images/background.jpg');"></div>
@@ -109,10 +111,8 @@
 		});
 
 
- 		let checkbox = $("#sync_viewers")[0];
-
- 		$(document).ready(checkbox.addEventListener('change', function() {
-			let options = {
+ 		$(document).ready(function(){
+ 			let options = {
 				attributes: true,
   				attributeOldValue: true,
   				characterData: true,
@@ -120,23 +120,11 @@
   				childList: true,
   				subtree: true
 			}
-			let observer = new MutationObserver(subscriber);
-			let fieldOfView = $("#potree_sidebar_container1").find("#lblFOV");
-			let moveSpeed = $("#potree_sidebar_container1").find("#lblMoveSpeed");
-			let sidebar = $("#potree_sidebar_container1").find("#sidebar_root");
+			let checkbox = $("#sync_viewers")[0];
 
-			function fovCallback(mutations) {
-				console.log(mutations);
-  				for (let mutation of mutations) {
-    				if (mutation.type === 'childList') {
-      					console.log('Mutation Detected: ' + viewer1.getFOV() + ' has been altered.');
-      					viewer2.setFOV(parseInt(viewer1.getFOV()));
-    				}
-  				}
- 			}
  			function subscriber(mutations) {
   				for (let mutation of mutations) {
-  					console.log("viewer2 bg = " + viewer2.getBackground());
+  					//console.log("viewer2 bg = " + viewer2.getBackground());
     				if (mutation.type === 'childList') {
     					console.log('id: ' + mutation.target.id + ' was changed.');
       					if(mutation.target.id === 'lblFOV'){
@@ -167,28 +155,49 @@
     					}
     				}
   				}
- 			}	 
-  			if (this.checked) {
-    			//observer.observe(fieldOfView[0],options);
-    			observer.observe(sidebar[0],options);
-    			console.log("check on")
-  			} else if(!this.checked){
-    			observer.disconnect();
-    			console.log("check off") 	
-  			}
-		})); 
+ 		    }	
 
+ 			let observer = new MutationObserver(subscriber);
+ 			let btnStart = document.querySelector('.btnStart');
+    		let btnStop = document.querySelector('.btnStop');
 
- 		/*checkbox.addEventListener('change', function() {
-  			if (this.checked) {
-    			//observer.observe(field,options);
-    			console.log("madar")
-  			} else {
-    			//observer.disconnect();
-    			console.log("chod") 	
-  			}
-		});
-*/
+    		// These commented out functions are for if the checkbox needs to be replaced by two buttons.
+
+ 			/*function doLogAndBtn(msg) {
+  				console.log(msg);
+  				btnStart.disabled = !btnStart.disabled;
+  				btnStop.disabled = !btnStop.disabled;
+			}
+
+			function onbtnStart(){
+				let sidebar = $("#potree_sidebar_container1").find("#sidebar_root");
+				doLogAndBtn('Observing for mutations: STARTED');
+    			observer.observe(sidebar[0], options);
+			}
+
+			function onbtnStop(){
+				let sidebar = $("#potree_sidebar_container1").find("#sidebar_root");
+				observer.disconnect();
+  				doLogAndBtn('STOPPED observing for mutations');
+			} */ 
+
+ 			//btnStart.addEventListener('click', onbtnStart);
+ 			//btnStop.addEventListener('click', onbtnStop);
+ 			checkbox.addEventListener('change',function(){
+ 				let sidebar = $("#potree_sidebar_container1").find("#sidebar_root");
+ 				if(this.checked){
+ 					//doLogAndBtn('Observing for mutations: STARTED');
+    				observer.observe(sidebar[0], options);
+ 				}
+ 				else{
+ 					observer.disconnect();
+  					//doLogAndBtn('STOPPED observing for mutations');
+ 				}
+ 			});
+			
+
+ 		}); 
+
 
 		
 	</script>
