@@ -36,8 +36,8 @@
 	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
 		<input id="sync_viewers" type="checkbox" />
 		<label for="sync_viewers"> Sync </label><br>  
-		<!-- <button class="btnStart">Start Observing</button>  -->
-		<button class="btnStop" disabled>Stop Observing</button>
+		<!-- <button class="btnStart">Start Observing</button>  
+		<button class="btnStop" disabled>Stop Observing</button> -->
 		<div id="potree_render_area1" style="background-image: url('../build/potree/resources/images/background.jpg');"></div>
 		<div id="potree_sidebar_container1"> </div>
 		<div id="potree_render_area2" style="background-image: url('../build/potree/resources/images/background.jpg');"></div>
@@ -148,18 +148,20 @@
       					//viewer2.setMoveSpeed(parseFloat(viewer1.getMoveSpeed()));
     				}
     				else if(mutation.type === 'attributes'){
-    					console.log('id: ' + mutation.target.className + ' was changed.');
-    					if(mutation.target.className == 'sp-alpha'){
+    					console.log('class: ' + mutation.target.className + ' was changed.');
+    					if(mutation.target.className === 'ui-slider-handle ui-corner-all ui-state-default ui-state-focus'){
     						viewer2.setEDLOpacity(parseFloat(viewer1.getEDLOpacity()));
-    						console.log(viewer1.getEDLOpacity() + " : " + viewer2.getEDLOpacity());
+    					}
+    					else if(mutation.target.className === 'jstree-anchor jstree-checked jstree-clicked'){
+    						viewer2.setShowBoundingBox(viewer1.getShowBoundingBox);
     					}
     				}
   				}
  		    }	
 
  			let observer = new MutationObserver(subscriber);
- 			let btnStart = document.querySelector('.btnStart');
-    		let btnStop = document.querySelector('.btnStop');
+ 			//let btnStart = document.querySelector('.btnStart');
+    		//let btnStop = document.querySelector('.btnStop');
 
     		// These commented out functions are for if the checkbox needs to be replaced by two buttons.
 
