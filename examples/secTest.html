@@ -155,6 +155,12 @@
     					else if(mutation.target.className === 'jstree-anchor jstree-checked jstree-clicked'){
     						//viewer2.setShowBoundingBox(viewer1.getShowBoundingBox);
     					}
+    					else if(mutation.target.className === 'ui-button ui-state-default ui-state-active'){
+    						if(mutation.target.getAttribute('for') === 'splat_quality_options_standard' || mutation.target.getAttribute('for') === 'splat_quality_options_hq'){
+    							viewer2.useHQ = viewer1.useHQ;
+    							console.log(viewer2.useHQ);
+    						}
+    					}
     				}
   				}
  		    }	
