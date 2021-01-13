@@ -127,6 +127,7 @@
   					//console.log("viewer2 bg = " + viewer2.getBackground());
     				if (mutation.type === 'childList') {
     					console.log('id: ' + mutation.target.id + ' was changed.');
+    					console.log('class: ' + mutation.target.className + ' was changed.');
       					if(mutation.target.id === 'lblFOV'){
       						viewer2.setFOV(parseFloat(viewer1.getFOV()));
       					}
@@ -152,13 +153,18 @@
     					if(mutation.target.className === 'ui-slider-handle ui-corner-all ui-state-default ui-state-focus'){
     						viewer2.setEDLOpacity(parseFloat(viewer1.getEDLOpacity()));
     					}
-    					else if(mutation.target.className === 'jstree-anchor jstree-checked jstree-clicked'){
-    						//viewer2.setShowBoundingBox(viewer1.getShowBoundingBox);
-    					}
     					else if(mutation.target.className === 'ui-button ui-state-default ui-state-active'){
     						if(mutation.target.getAttribute('for') === 'splat_quality_options_standard' || mutation.target.getAttribute('for') === 'splat_quality_options_hq'){
     							viewer2.useHQ = viewer1.useHQ;
-    							console.log(viewer2.useHQ);
+    							//console.log(viewer2.useHQ);
+    						}
+    						else if(mutation.target.getAttribute('for') === 'background_options_skybox' || mutation.target.getAttribute('for') === 'background_options_gradient' || mutation.target.getAttribute('for') === 'background_options_black' || mutation.target.getAttribute('for') === 'background_options_white' || mutation.target.getAttribute('for') === 'background_options_none'){
+    							viewer2.setBackground(viewer1.getBackground());
+    						}
+    					}
+    					else if(mutation.target.className === 'ui-slider-handle ui-corner-all ui-state-default'){
+    						if(mutation.target.id == 'show_bounding_box'){
+    							viewer2.setShowBoundingBox(viewer1.getShowBoundingBox);
     						}
     					}
     				}
