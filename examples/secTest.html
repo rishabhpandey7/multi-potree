@@ -126,7 +126,7 @@
   				for (let mutation of mutations) {
   					//console.log("viewer2 bg = " + viewer2.getBackground());
     				if (mutation.type === 'childList') {
-    					console.log('id: ' + mutation.target.id + ' was changed.');
+    					console.log(mutation.target);
     					console.log('class: ' + mutation.target.className + ' was changed.');
       					if(mutation.target.id === 'lblFOV'){
       						viewer2.setFOV(parseFloat(viewer1.getFOV()));
@@ -149,7 +149,7 @@
       					//viewer2.setMoveSpeed(parseFloat(viewer1.getMoveSpeed()));
     				}
     				else if(mutation.type === 'attributes'){
-    					console.log('class: ' + mutation.target.className + ' was changed.');
+    					console.log('class: atb' + mutation.target.className + ' was changed.');
     					if(mutation.target.className === 'ui-slider-handle ui-corner-all ui-state-default ui-state-focus'){
     						viewer2.setEDLOpacity(parseFloat(viewer1.getEDLOpacity()));
     					}
