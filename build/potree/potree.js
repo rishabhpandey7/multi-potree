@@ -35348,15 +35348,10 @@ ENDSEC
 			super();
 
 			this.renderArea = domElement;
-			this.renderArea2 = domElement;
 			this.guiLoaded = false;
-			this.guiLoaded2 = false;
 			this.guiLoadTasks = [];
-			this.guiLoadTasks2 = [];
 			this.vr = null;
-			this.vr2 = null;
 			this.onVrListeners = [];
-			this.onVrListeners2 = [];
 			this.messages = [];
 			this.elMessages = $(`
 		<div id="message_listing" 
@@ -35393,8 +35388,6 @@ ENDSEC
 
 			this.pointCloudLoadedCallback = args.onPointCloudLoaded || function () {};
 
-			this.pointCloudLoadedCallback2 = args.onPointCloudLoaded2 || function () {};
-
 			// if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
 			//	defaultSettings.navigation = "Orbit";
 			// }
@@ -35402,96 +35395,56 @@ ENDSEC
 			this.server = null;
 
 			this.fov = 60;
-			this.fov2 = 60;
 			this.isFlipYZ = false;
-			this.isFlipYZ2 = false;
 			this.useDEMCollisions = false;
-			this.useDEMCollisions2 = false;
 			this.generateDEM = false;
-			this.generateDEM2 = false;
 			this.minNodeSize = 30;
-			this.minNodeSize2 = 30;
 			this.edlStrength = 1.0;
-			this.edlStrength2 = 1.0;
 			this.edlRadius = 1.4;
-			this.edlRadius2 = 1.4;
 			this.edlOpacity = 1.0;
-			this.edlOpacity2 = 1.0;
 			this.useEDL = false;
-			this.useEDL2 = false;
 			this.description = "";
-			this.description2 = "";
 
 			this.classifications = ClassificationScheme.DEFAULT;
-			this.classifications2 = ClassificationScheme.DEFAULT;
 
 			this.moveSpeed = 10;
-			this.moveSpeed2 = 10;
 
 			this.lengthUnit = LengthUnits.METER;
-			this.lengthUnit2 = LengthUnits.METER;
 			this.lengthUnitDisplay = LengthUnits.METER;
-			this.lengthUnitDisplay2 = LengthUnits.METER;
 
 			this.showBoundingBox = false;
-			this.showBoundingBox2 = false;
 			this.showAnnotations = true;
-			this.showAnnotations2 = true;
 			this.freeze = false;
-			this.freeze2 = false;
 			this.clipTask = ClipTask.HIGHLIGHT;
-			this.clipTask2 = ClipTask.HIGHLIGHT;
 			this.clipMethod = ClipMethod.INSIDE_ANY;
-			this.clipMethod2 = ClipMethod.INSIDE_ANY;
 
 			this.elevationGradientRepeat = ElevationGradientRepeat.CLAMP;
-			this.elevationGradientRepeat2 = ElevationGradientRepeat.CLAMP;
 
 			this.filterReturnNumberRange = [0, 7];
-			this.filterReturnNumberRange2 = [0, 7];
 			this.filterNumberOfReturnsRange = [0, 7];
-			this.filterNumberOfReturnsRange2 = [0, 7];
 			this.filterGPSTimeRange = [-Infinity, Infinity];
-			this.filterGPSTimeRange2 = [-Infinity, Infinity];
 			this.filterPointSourceIDRange = [0, 65535];
-			this.filterPointSourceIDRange2 = [0, 65535];
 
 			this.potreeRenderer = null;
-			this.potreeRenderer2 = null;
 			this.edlRenderer = null;
-			this.edlRenderer2 = null;
 			this.renderer = null;
-			this.renderer2 = null;
 			this.pRenderer = null;
-			this.pRenderer2 = null;
 
 			this.scene = null;
-			this.scene2 = null;
 			this.overlay = null;
-			this.overlay2 = null;
 			this.overlayCamera = null;
-			this.overlayCamera2 = null;
 
 			this.inputHandler = null;
-			this.inputHandler2 = null;
 			this.controls = null;
-			this.controls2 = null;
 
 			this.clippingTool =  null;
-			this.clippingTool2 =  null;
 			this.transformationTool = null;
-			this.transformationTool2 = null;
 			this.navigationCube = null;
-			this.navigationCube2 = null;
 			this.compass = null;
-			this.compass2 = null;
 			
 			this.skybox = null;
-			this.skybox2 = null;
 			this.clock = new THREE.Clock();
-			this.clock2 = new THREE.Clock();
 			this.background = null;
-			this.background2 = null;
 
 			this.initThree();
 			//this.initThree2();
