@@ -94,7 +94,7 @@
 		//viewer2.setDescription2("abc");
 		
 		// Sigeom
-		Potree.loadPointCloud("../pointclouds/lion_takanawa/cloud.js", "test2", function(e){
+		Potree.loadPointCloud("../pointclouds/vol_total/cloud.js", "test2", function(e){
 			viewer2.scene.addPointCloud(e.pointcloud);
 			
 			let material = e.pointcloud.material;
@@ -145,6 +145,22 @@
       					}
       					else if(mutation.target.id === 'lblMoveSpeed'){
       						viewer2.setMoveSpeed(parseFloat(viewer1.getMoveSpeed()));
+      					}
+      					else if(mutation.target.id === 'sldPointSize'){
+      						$("#potree_sidebar_container2").find("#sidebar_root").find('#menu_measurements').next().slideDown();
+      						let measurement = viewer2.measuringTool.startInsertion({
+								showDistances: false,
+								showAngles: false,
+								showCoordinates: true,
+								showArea: false,
+								closed: true,
+								maxMarkers: 1,
+								name: 'Point'});
+
+							let measurementsRoot = $("#potree_sidebar_container2").find("#sidebar_root").find("#jstree_scene").jstree().get_json("measurements");
+							let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
+							$.jstree.reference(jsonNode.id).deselect_all();
+							$.jstree.reference(jsonNode.id).select_node(jsonNode.id);
       					}
       					//viewer2.setMoveSpeed(parseFloat(viewer1.getMoveSpeed()));
     				}
