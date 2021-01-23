@@ -160,7 +160,8 @@
 							let measurementsRoot = $("#potree_sidebar_container2").find("#sidebar_root").find("#jstree_scene").jstree().get_json("measurements");
 							let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
 							$.jstree.reference(jsonNode.id).deselect_all();
-							$.jstree.reference(jsonNode.id).select_node(jsonNode.id);
+							$.jstree.reference(jsonNode.id).select_node(jsonNode.id); 
+
       					}
       					//viewer2.setMoveSpeed(parseFloat(viewer1.getMoveSpeed()));
     				}
