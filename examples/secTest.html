@@ -34,19 +34,10 @@
 	<!-- INCLUDE SETTINGS HERE -->
 	
 	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
-<<<<<<< HEAD
-		<div style="float: left;">
-		<input id="sync_viewer1" type="checkbox" />
-		<label for="sync_viewer1"> Sync w/ viewer 1 </label><br>
-		</div>
-		<div style="float: left;">  
-		<input id="sync_viewer2" type="checkbox"/>
-		<label for="sync_viewer2"> Sync 2 </label><br>
-		</div>
+		<input id="sync_viewers" type="checkbox" />
+		<label for="sync_viewers"> Sync </label><br>  
 		<!-- <button class="btnStart">Start Observing</button>  
 		<button class="btnStop" disabled>Stop Observing</button> -->
-=======
->>>>>>> parent of 891e91f... updated examples
 		<div id="potree_render_area1" style="background-image: url('../build/potree/resources/images/background.jpg');"></div>
 		<div id="potree_sidebar_container1"> </div>
 		<div id="potree_render_area2" style="background-image: url('../build/potree/resources/images/background.jpg');"></div>
@@ -62,7 +53,7 @@
 		viewer1.setPointBudget(1*1000*1000);
 		viewer1.loadSettingsFromURL();
 		
-		viewer1.setDescription("Test Viewer");
+		viewer1.setDescription("Tester");
 		
 		viewer1.loadGUI(() => {
 			viewer1.setLanguage('en');
@@ -103,7 +94,7 @@
 		//viewer2.setDescription2("abc");
 		
 		// Sigeom
-		Potree.loadPointCloud("../pointclouds/lion_takanawa/cloud.js", "test2", function(e){
+		Potree.loadPointCloud("../pointclouds/vol_total/cloud.js", "test2", function(e){
 			viewer2.scene.addPointCloud(e.pointcloud);
 			
 			let material = e.pointcloud.material;
@@ -118,7 +109,6 @@
 			
 			viewer2.fitToScreen();
 		});
-<<<<<<< HEAD
 
 
  		$(document).ready(function(){
@@ -130,14 +120,14 @@
   				childList: true,
   				subtree: true
 			}
-			let checkbox1 = $("#sync_viewer1")[0];
-			let checkbox2 = $("#sync_viewer2")[0];
+			let checkbox = $("#sync_viewers")[0];
 
  			function subscriber(mutations) {
   				for (let mutation of mutations) {
   					//console.log("viewer2 bg = " + viewer2.getBackground());
     				if (mutation.type === 'childList') {
-    					console.log(mutation.target);
+    					console.log('id: ' + mutation.target.id + ' was changed.');
+    					console.log('class: ' + mutation.target.className + ' was changed.');
       					if(mutation.target.id === 'lblFOV'){
       						viewer2.setFOV(parseFloat(viewer1.getFOV()));
       					}
@@ -224,20 +214,8 @@
 
  			//btnStart.addEventListener('click', onbtnStart);
  			//btnStop.addEventListener('click', onbtnStop);
- 			checkbox1.addEventListener('change',function(){
+ 			checkbox.addEventListener('change',function(){
  				let sidebar = $("#potree_sidebar_container1").find("#sidebar_root");
- 				if(this.checked){
- 					//doLogAndBtn('Observing for mutations: STARTED');
-    				observer.observe(sidebar[0], options);
- 				}
- 				else{
- 					observer.disconnect();
-  					//doLogAndBtn('STOPPED observing for mutations');
- 				}
- 			});
-
- 			checkbox2.addEventListener('change',function(){
- 				let sidebar = $("#potree_sidebar_container2").find("#sidebar_root");
  				if(this.checked){
  					//doLogAndBtn('Observing for mutations: STARTED');
     				observer.observe(sidebar[0], options);
@@ -252,8 +230,6 @@
  		}); 
 
 
-=======
->>>>>>> parent of 891e91f... updated examples
 		
 	</script>
 	
