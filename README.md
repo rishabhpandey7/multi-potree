@@ -34,7 +34,7 @@ Use the `npm start` command to
 * start a web server at localhost:1234. 
 
 To run the standard Potree single viewer, go to http://localhost:1234/examples/ to test any of the examples.
-To run the double pointcloud viewer, go to the test.html in the examples folder. Then, duplicate and rename the file and modify the pathw in the html file to your own point cloud. 
+To run the double pointcloud viewer, go to the test.html example in the examples folder. Then, duplicate and rename the file and modify the pointcloud paths in the html file to your own point cloud. 
 
 ### Convert Point Clouds to Potree Format
 
