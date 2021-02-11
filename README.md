@@ -4,7 +4,13 @@
 
 * This is a multi-pointcloud viewer based on Potree, which is a free open-source WebGL based point cloud renderer for large point clouds. It is based on the [TU Wien Scanopy project](https://www.cg.tuwien.ac.at/research/projects/Scanopy/) and research projects [Harvest4D](https://harvest4d.org/), [GCD Doctoral College](https://gcd.tuwien.ac.at/) and [Superhumans](https://www.cg.tuwien.ac.at/research/projects/Superhumans/).
 * Newest information and work in progress is usually available on [twitter](https://twitter.com/m_schuetz)
-* Reference: [Potree: Rendering Large Point Clouds in Web Browsers
+* Reference: [Potree: Rendering Large Point Clouds in Web Browsers](Potree: Rendering Large Point Clouds in Web Browsers)
+
+![pic0](https://user-images.githubusercontent.com/51262683/107680799-50a21780-6c6c-11eb-8937-23f6759423d3.PNG)
+
+![pic1](https://user-images.githubusercontent.com/51262683/107680793-4f70ea80-6c6c-11eb-902c-4270b67790c0.PNG)
+
+![pic2](https://user-images.githubusercontent.com/51262683/107680784-4e3fbd80-6c6c-11eb-9b43-fcd4b5ec5254.PNG)
 
 
 # Getting Started
@@ -27,7 +33,8 @@ Use the `npm start` command to
 * watch for changes to the source code and automatically create a new build on change
 * start a web server at localhost:1234. 
 
-Go to http://localhost:1234/examples/ to test the examples.
+To run the standard Potree single viewer, go to http://localhost:1234/examples/ to test any of the examples.
+To run the double pointcloud viewer, go to the test.html in the examples folder. Then, duplicate and rename the file and modify the pathw in the html file to your own point cloud. 
 
 ### Convert Point Clouds to Potree Format
 
