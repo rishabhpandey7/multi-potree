@@ -129,7 +129,9 @@
 			let checkbox1 = $("#sync_viewer1")[0];
 			let checkbox2 = $("#sync_viewer2")[0];
 
+
  			function subscriber(mutations) {
+ 				
   				for (let mutation of mutations) {
   					//console.log("viewer2 bg = " + viewer2.getBackground());
     				if (mutation.type === 'childList') {
@@ -152,27 +154,23 @@
       					else if(mutation.target.id === 'lblMoveSpeed'){
       						viewer2.setMoveSpeed(parseFloat(viewer1.getMoveSpeed()));
       					}
-      					else if(mutation.target.id === 'sldPointSize'){
-      						$("#potree_sidebar_container2").find("#sidebar_root").find('#menu_measurements').next().slideDown();
-      						let measurement = viewer2.measuringTool.startInsertion({
-								showDistances: false,
-								showAngles: false,
-								showCoordinates: true,
-								showArea: false,
-								closed: true,
-								maxMarkers: 1,
-								name: 'Point'});
-
-							let measurementsRoot = $("#potree_sidebar_container2").find("#sidebar_root").find("#jstree_scene").jstree().get_json("measurements");
-							let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
-							$.jstree.reference(jsonNode.id).deselect_all();
-							$.jstree.reference(jsonNode.id).select_node(jsonNode.id); 
-
+      					else if(mutation.target.className === 'coordinates_table_container'){
+      						let table = $("#potree_sidebar_container1").find("#sidebar_root").find("#scene_object_properties").find('.measurement_value_table')[0];
+      						let coords = [];
+      						for(let i = 1; i < table.rows.length; i++){
+      							let objCells = table.rows.item(i).cells;
+      							for(let j = 0; j < objCells.length; j++){
+      								coords.push(objCells.item(j).innerHTML); 
+      							} 
+      						}
+      						console.log(coords);
+      						
       					}
+      					
       					//viewer2.setMoveSpeed(parseFloat(viewer1.getMoveSpeed()));
     				}
     				else if(mutation.type === 'attributes'){
-    					console.log('class: ' + mutation.target.className + ' was changed.');
+    					console.log('class: ' + mutation.target.className + ' id: ' + mutation.target.id);
     					if(mutation.target.className === 'ui-slider-handle ui-corner-all ui-state-default ui-state-focus'){
     						viewer2.setEDLOpacity(parseFloat(viewer1.getEDLOpacity()));
     					}
@@ -189,6 +187,23 @@
     						if(mutation.target.id == 'show_bounding_box'){
     							viewer2.setShowBoundingBox(viewer1.getShowBoundingBox);
     						}
+    					}
+    					else if(mutation.target.id === 'optPointSizing'){
+    						$("#potree_sidebar_container2").find("#sidebar_root").find('#menu_measurements').next().slideDown();
+      						let measurement = viewer2.measuringTool.startInsertion({
+								showDistances: false,
+								showAngles: false,
+								showCoordinates: true,
+								showArea: false,
+								closed: true,
+								maxMarkers: 1,
+								name: 'Point'});
+
+							let measurementsRoot = $("#potree_sidebar_container2").find("#sidebar_root").find("#jstree_scene").jstree().get_json("measurements");
+							let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
+							$.jstree.reference(jsonNode.id).deselect_all();
+							$.jstree.reference(jsonNode.id).select_node(jsonNode.id); 
+
     					}
     				}
   				}

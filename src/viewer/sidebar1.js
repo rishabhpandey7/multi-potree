@@ -38,7 +38,7 @@ export class Sidebar1{
 		`);
 
 		element.click(callback);
-
+		
 		return element;
 	}
 
