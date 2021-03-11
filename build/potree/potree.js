@@ -20374,6 +20374,7 @@ void main() {
 
 	}
 
+
 	class ProfileFakeOctree extends PointCloudTree{
 
 		constructor(octree){

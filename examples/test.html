@@ -128,9 +128,9 @@
 			}
 			let checkbox1 = $("#sync_viewer1")[0];
 			let checkbox2 = $("#sync_viewer2")[0];
-			let x = 0.0;
-			let y = 0.0;
-			let z = 0.0;
+			let x1 = 0.0;
+			let y1 = 0.0;
+			let z1 = 0.0;
 
  			function subscriber(mutations) {
  				
@@ -170,10 +170,14 @@
       						arr.push(parseFloat(coords[1].replace(/[^0-9\.]/g,'')));
       						arr.push(parseFloat(coords[2].replace(/[^0-9\.]/g,'')));
       						console.log(arr);
-      						x = arr[0];
-      						y = arr[1];
-      						z = arr[2];
-      						
+      						x1 = arr[0];
+      						y1 = arr[1];
+      						z1 = arr[2];
+      						let newCoords = { x: x1, y: y1, z: z1 };
+      						let pointMeasure = viewer2.measuringTool.scene.getObjectByName('Point');
+      						pointMeasure.setPosition(pointMeasure.points.length-1,newCoords);
+      						console.log(pointMeasure);
+      						console.log(pointMeasure.position)
       					}
       					
       					//viewer2.setMoveSpeed(parseFloat(viewer1.getMoveSpeed()));
@@ -206,7 +210,7 @@
 								showArea: false,
 								closed: true,
 								maxMarkers: 1,
-								name: 'Point'}, x,y,z);
+								name: 'Point'}, x1,y1,z1);
 
 							let measurementsRoot = $("#potree_sidebar_container2").find("#sidebar_root").find("#jstree_scene").jstree().get_json("measurements");
 							let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);

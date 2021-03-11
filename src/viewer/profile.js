@@ -49,6 +49,7 @@ class Batch{
 
 }
 
+
 class ProfileFakeOctree extends PointCloudTree{
 
 	constructor(octree){

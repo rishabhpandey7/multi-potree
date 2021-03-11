@@ -200,6 +200,7 @@ export class MeasuringTool extends EventDispatcher{
 
 	}
 
+
 	startInsertion (args = {}) {
 		let domElement = this.viewer.renderer.domElement;
 
