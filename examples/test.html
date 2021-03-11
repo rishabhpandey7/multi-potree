@@ -100,7 +100,7 @@
 		//viewer2.setDescription2("abc");
 		
 		// Sigeom
-		Potree.loadPointCloud("../pointclouds/lion_takanawa/cloud.js", "test2", function(e){
+		Potree.loadPointCloud("../pointclouds/vol_total/cloud.js", "test2", function(e){
 			viewer2.scene.addPointCloud(e.pointcloud);
 			
 			let material = e.pointcloud.material;
@@ -128,7 +128,9 @@
 			}
 			let checkbox1 = $("#sync_viewer1")[0];
 			let checkbox2 = $("#sync_viewer2")[0];
-
+			let x = 0.0;
+			let y = 0.0;
+			let z = 0.0;
 
  			function subscriber(mutations) {
  				
@@ -161,9 +163,16 @@
       							let objCells = table.rows.item(i).cells;
       							for(let j = 0; j < objCells.length; j++){
       								coords.push(objCells.item(j).innerHTML); 
-      							} 
+      							}  
       						}
-      						console.log(coords);
+      						let arr = [];
+      						arr.push(parseFloat(coords[0].replace(/[^0-9\.]/g,'')));
+      						arr.push(parseFloat(coords[1].replace(/[^0-9\.]/g,'')));
+      						arr.push(parseFloat(coords[2].replace(/[^0-9\.]/g,'')));
+      						console.log(arr);
+      						x = arr[0];
+      						y = arr[1];
+      						z = arr[2];
       						
       					}
       					
@@ -190,14 +199,14 @@
     					}
     					else if(mutation.target.id === 'optPointSizing'){
     						$("#potree_sidebar_container2").find("#sidebar_root").find('#menu_measurements').next().slideDown();
-      						let measurement = viewer2.measuringTool.startInsertion({
+      						let measurement = viewer2.measuringTool.insertMarker({
 								showDistances: false,
 								showAngles: false,
 								showCoordinates: true,
 								showArea: false,
 								closed: true,
 								maxMarkers: 1,
-								name: 'Point'});
+								name: 'Point'}, x,y,z);
 
 							let measurementsRoot = $("#potree_sidebar_container2").find("#sidebar_root").find("#jstree_scene").jstree().get_json("measurements");
 							let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
@@ -205,6 +214,7 @@
 							$.jstree.reference(jsonNode.id).select_node(jsonNode.id); 
 
     					}
+    					
     				}
   				}
  		    }	

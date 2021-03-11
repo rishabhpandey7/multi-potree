@@ -16054,6 +16054,41 @@ void main() {
 			e.scene.addEventListener('measurement_removed', this.onRemove);
 		}
 
+		insertMarker(args = {}, x,y,z){
+			 let measure = new Measure();
+
+			 const pick = (defaul, alternative) => {
+				if(defaul != null){
+					return defaul;
+				}else {
+					return alternative;
+				}
+			};
+
+			measure.showDistances = (args.showDistances === null) ? true : args.showDistances;
+
+			measure.showArea = pick(args.showArea, false);
+			measure.showAngles = pick(args.showAngles, false);
+			measure.showCoordinates = pick(args.showCoordinates, false);
+			measure.showHeight = pick(args.showHeight, false);
+			measure.showCircle = pick(args.showCircle, false);
+			measure.showAzimuth = pick(args.showAzimuth, false);
+			measure.showEdges = pick(args.showEdges, true);
+			measure.closed = pick(args.closed, false);
+			measure.maxMarkers = pick(args.maxMarkers, Infinity);
+
+			measure.name = args.name || 'Measurement';
+
+			this.scene.add(measure);
+
+			measure.addMarker(new THREE.Vector3(x, y, z));
+
+			this.viewer.scene.addMeasurement(measure);
+
+			return measure;
+
+		}
+
 		startInsertion (args = {}) {
 			let domElement = this.viewer.renderer.domElement;
 
