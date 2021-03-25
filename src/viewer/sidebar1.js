@@ -25,7 +25,8 @@ export class Sidebar1{
 		this.measuringTool = viewer.measuringTool;
 		this.profileTool = viewer.profileTool;
 		this.volumeTool = viewer.volumeTool;
-
+		this.pointString = 'Point';
+		this.pointCounter = 1;
 		this.dom = $("#potree_sidebar_container1").find("#sidebar_root");
 	}
 
@@ -95,8 +96,9 @@ export class Sidebar1{
 					showArea: false,
 					closed: true,
 					maxMarkers: 1,
-					name: 'Point'});
+					name: 'Point ' + this.pointCounter.toString()});
 
+				this.pointCounter += 1;
 				let measurementsRoot = this.dom.find("#jstree_scene").jstree().get_json("measurements");
 				let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
 				$.jstree.reference(jsonNode.id).deselect_all();

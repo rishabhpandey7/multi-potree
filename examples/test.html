@@ -131,6 +131,7 @@
 			let x1 = 0.0;
 			let y1 = 0.0;
 			let z1 = 0.0;
+			let pointCounter = 0;
 
  			function subscriber(mutations) {
  				
@@ -174,10 +175,10 @@
       						y1 = arr[1];
       						z1 = arr[2];
       						let newCoords = { x: x1, y: y1, z: z1 };
-      						let pointMeasure = viewer2.measuringTool.scene.getObjectByName('Point');
+      						let pointMeasure = viewer2.measuringTool.scene.getObjectByName('Point ' + pointCounter.toString());
       						pointMeasure.setPosition(pointMeasure.points.length-1,newCoords);
       						console.log(pointMeasure);
-      						console.log(pointMeasure.position)
+      						console.log(pointMeasure.position);
       					}
       					
       					//viewer2.setMoveSpeed(parseFloat(viewer1.getMoveSpeed()));
@@ -201,7 +202,8 @@
     							viewer2.setShowBoundingBox(viewer1.getShowBoundingBox);
     						}
     					}
-    					else if(mutation.target.id === 'optPointSizing'){
+    					else if(mutation.target.id === 'measurements_anchor'){
+    						pointCounter += 1;
     						$("#potree_sidebar_container2").find("#sidebar_root").find('#menu_measurements').next().slideDown();
       						let measurement = viewer2.measuringTool.insertMarker({
 								showDistances: false,
@@ -210,8 +212,9 @@
 								showArea: false,
 								closed: true,
 								maxMarkers: 1,
-								name: 'Point'}, x1,y1,z1);
+								name: 'Point ' + pointCounter.toString()}, x1,y1,z1);
 
+      						
 							let measurementsRoot = $("#potree_sidebar_container2").find("#sidebar_root").find("#jstree_scene").jstree().get_json("measurements");
 							let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
 							$.jstree.reference(jsonNode.id).deselect_all();

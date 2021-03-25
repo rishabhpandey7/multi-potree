@@ -16063,7 +16063,7 @@ void main() {
 				}else {
 					return alternative;
 				}
-			};
+			  };
 
 			measure.showDistances = (args.showDistances === null) ? true : args.showDistances;
 
@@ -16088,6 +16088,7 @@ void main() {
 			return measure;
 
 		}
+
 
 		startInsertion (args = {}) {
 			let domElement = this.viewer.renderer.domElement;
@@ -32336,7 +32337,8 @@ ENDSEC
 			this.measuringTool = viewer.measuringTool;
 			this.profileTool = viewer.profileTool;
 			this.volumeTool = viewer.volumeTool;
-
+			this.pointString = 'Point';
+			this.pointCounter = 1;
 			this.dom = $("#potree_sidebar_container1").find("#sidebar_root");
 		}
 
@@ -32406,8 +32408,9 @@ ENDSEC
 						showArea: false,
 						closed: true,
 						maxMarkers: 1,
-						name: 'Point'});
+						name: 'Point ' + this.pointCounter.toString()});
 
+					this.pointCounter += 1;
 					let measurementsRoot = this.dom.find("#jstree_scene").jstree().get_json("measurements");
 					let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
 					$.jstree.reference(jsonNode.id).deselect_all();

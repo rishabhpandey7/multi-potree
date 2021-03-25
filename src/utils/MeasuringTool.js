@@ -174,7 +174,7 @@ export class MeasuringTool extends EventDispatcher{
 			}else{
 				return alternative;
 			}
-		};
+		  };
 
 		measure.showDistances = (args.showDistances === null) ? true : args.showDistances;
 
