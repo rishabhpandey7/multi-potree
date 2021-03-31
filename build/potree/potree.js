@@ -16055,7 +16055,13 @@ void main() {
 		}
 
 		insertMarker(args = {}, x,y,z){
+			 let domElement = this.viewer.renderer.domElement;
 			 let measure = new Measure();
+
+			 this.dispatchEvent({
+				type: 'start_inserting_measurement',
+				measure: measure
+			  });
 
 			 const pick = (defaul, alternative) => {
 				if(defaul != null){
@@ -16080,6 +16086,39 @@ void main() {
 			measure.name = args.name || 'Measurement';
 
 			this.scene.add(measure);
+
+			let cancel = {
+				removeLastMarker: measure.maxMarkers > 3,
+				callback: null
+			};
+
+			let insertionCallback = (e) => {
+				if (e.button === THREE.MOUSE.LEFT) {
+					measure.addMarker(measure.points[measure.points.length - 1].position.clone());
+
+					if (measure.points.length >= measure.maxMarkers) {
+						cancel.callback();
+					}
+
+					this.viewer.inputHandler.startDragging(
+						measure.spheres[measure.spheres.length - 1]);
+				} else if (e.button === THREE.MOUSE.RIGHT) {
+					cancel.callback();
+				}
+			};
+
+			cancel.callback = e => {
+				if (cancel.removeLastMarker) {
+					measure.removeMarker(measure.points.length - 1);
+				}
+				domElement.removeEventListener('mouseup', insertionCallback, true);
+				this.viewer.removeEventListener('cancel_insertions', cancel.callback);
+			};
+
+			if (measure.maxMarkers > 1) {
+				this.viewer.addEventListener('cancel_insertions', cancel.callback);
+				domElement.addEventListener('mouseup', insertionCallback, true);
+			}
 
 			measure.addMarker(new THREE.Vector3(x, y, z));
 
@@ -32338,6 +32377,7 @@ ENDSEC
 			this.volumeTool = viewer.volumeTool;
 			this.pointString = 'Point';
 			this.pointCounter = 1;
+			this.distanceCounter = 1;
 			this.dom = $("#potree_sidebar_container1").find("#sidebar_root");
 		}
 
@@ -32427,8 +32467,9 @@ ENDSEC
 						showDistances: true,
 						showArea: false,
 						closed: false,
-						name: 'Distance'});
+						name: 'Distance ' + this.distanceCounter.toString()});
 
+					this.distanceCounter += 1;
 					let measurementsRoot = this.dom.find("#jstree_scene").jstree().get_json("measurements");
 					let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
 					$.jstree.reference(jsonNode.id).deselect_all();

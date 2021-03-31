@@ -132,6 +132,7 @@
 			let y1 = 0.0;
 			let z1 = 0.0;
 			let pointCounter = 0;
+			let distanceCounter = 0;
 
  			function subscriber(mutations) {
  				
@@ -159,7 +160,8 @@
       					}
       					else if(mutation.target.className === 'coordinates_table_container'){
       						let table = $("#potree_sidebar_container1").find("#sidebar_root").find("#scene_object_properties").find('.measurement_value_table')[0];
-      						if(table.rows.length === 2){    //point measurement
+      						let distTable = $("#potree_sidebar_container1").find("#sidebar_root").find("#scene_object_properties").find('#distances_table')[0]; 
+      						if(typeof distTable == 'undefined'){    //point measurement
       						let coords = [];
       						for(let i = 1; i < table.rows.length; i++){
       							let objCells = table.rows.item(i).cells;
@@ -181,8 +183,10 @@
       						console.log(pointMeasure);
       						console.log(pointMeasure.position);
       						}
-      						else if(table.rows.length > 3){    // distance measurement
-      							console.log('distance table')
+      						else if(table.rows.length > 2){    // distance measurement
+      							console.log('distance table');
+
+
       						}
       					}
       					
@@ -210,7 +214,7 @@
     					else if(mutation.target.id === 'measurements_anchor'){
     						let table = $("#potree_sidebar_container1").find("#sidebar_root").find("#scene_object_properties").find('#distances_table')[0];
     						if(typeof table == 'undefined'){
-    						console.log('ab')
+    						console.log('new point added')
     						pointCounter += 1;
     						$("#potree_sidebar_container2").find("#sidebar_root").find('#menu_measurements').next().slideDown();
       						let measurement = viewer2.measuringTool.insertMarker({
@@ -230,6 +234,20 @@
 							}
 							else{
 								console.log('new distance added');
+								distanceCounter += 1;
+								$("#potree_sidebar_container2").find("#sidebar_root").find('#menu_measurements').next().slideDown();
+      							let measurement = viewer2.measuringTool.insertMarker({
+									showDistances: true,
+									showArea: false,
+									closed: false,
+									name: 'Distance ' + distanceCounter.toString()}, x1,y1,z1);
+
+      						
+								let measurementsRoot = $("#potree_sidebar_container2").find("#sidebar_root").find("#jstree_scene").jstree().get_json("measurements");
+								let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
+								$.jstree.reference(jsonNode.id).deselect_all();
+								$.jstree.reference(jsonNode.id).select_node(jsonNode.id);
+
 							}
 
     					}

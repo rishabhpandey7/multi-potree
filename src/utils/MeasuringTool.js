@@ -166,7 +166,13 @@ export class MeasuringTool extends EventDispatcher{
 	}
 
 	insertMarker(args = {}, x,y,z){
+		 let domElement = this.viewer.renderer.domElement;
 		 let measure = new Measure();
+
+		 this.dispatchEvent({
+			type: 'start_inserting_measurement',
+			measure: measure
+		  });
 
 		 const pick = (defaul, alternative) => {
 			if(defaul != null){
@@ -191,6 +197,39 @@ export class MeasuringTool extends EventDispatcher{
 		measure.name = args.name || 'Measurement';
 
 		this.scene.add(measure);
+
+		let cancel = {
+			removeLastMarker: measure.maxMarkers > 3,
+			callback: null
+		};
+
+		let insertionCallback = (e) => {
+			if (e.button === THREE.MOUSE.LEFT) {
+				measure.addMarker(measure.points[measure.points.length - 1].position.clone());
+
+				if (measure.points.length >= measure.maxMarkers) {
+					cancel.callback();
+				}
+
+				this.viewer.inputHandler.startDragging(
+					measure.spheres[measure.spheres.length - 1]);
+			} else if (e.button === THREE.MOUSE.RIGHT) {
+				cancel.callback();
+			}
+		};
+
+		cancel.callback = e => {
+			if (cancel.removeLastMarker) {
+				measure.removeMarker(measure.points.length - 1);
+			}
+			domElement.removeEventListener('mouseup', insertionCallback, true);
+			this.viewer.removeEventListener('cancel_insertions', cancel.callback);
+		};
+
+		if (measure.maxMarkers > 1) {
+			this.viewer.addEventListener('cancel_insertions', cancel.callback);
+			domElement.addEventListener('mouseup', insertionCallback, true);
+		}
 
 		measure.addMarker(new THREE.Vector3(x, y, z));
 
