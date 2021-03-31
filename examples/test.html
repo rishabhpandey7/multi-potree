@@ -185,6 +185,10 @@
       						}
       						else if(table.rows.length > 2){    // distance measurement
       							console.log('distance table');
+      							let distObj = viewer1.measuringTool.scene.getObjectByName('Distance ' + distanceCounter.toString()).clone();
+      							console.log(distObj);
+      							viewer2.scene.removeMeasurementByName('Distance ' + distanceCounter.toString());
+      							viewer2.scene.addMeasurement(distObj);
 
 
       						}
@@ -234,7 +238,7 @@
 							}
 							else{
 								console.log('new distance added');
-								distanceCounter += 1;
+								distanceCounter += 1; /*
 								$("#potree_sidebar_container2").find("#sidebar_root").find('#menu_measurements').next().slideDown();
       							let measurement = viewer2.measuringTool.insertMarker({
 									showDistances: true,
@@ -246,7 +250,7 @@
 								let measurementsRoot = $("#potree_sidebar_container2").find("#sidebar_root").find("#jstree_scene").jstree().get_json("measurements");
 								let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
 								$.jstree.reference(jsonNode.id).deselect_all();
-								$.jstree.reference(jsonNode.id).select_node(jsonNode.id);
+								$.jstree.reference(jsonNode.id).select_node(jsonNode.id); */
 
 							}
 

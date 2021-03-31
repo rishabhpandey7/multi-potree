@@ -278,6 +278,19 @@ export class Scene extends EventDispatcher{
 		});
 	};
 
+	removeMeasurementByName (name) {
+		let index = this.measurements.findIndex(el => el.name === name);
+		if (index > -1) {
+			let measurement = this.measurements[index];
+			this.measurements.splice(index, 1);
+			this.dispatchEvent({
+				'type': 'measurement_removed',
+				'scene': this,
+				'measurement': measurement
+			});
+		}
+	}
+
 	removeMeasurement (measurement) {
 		let index = this.measurements.indexOf(measurement);
 		if (index > -1) {
