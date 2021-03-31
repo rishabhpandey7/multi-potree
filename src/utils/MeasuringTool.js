@@ -220,7 +220,6 @@ export class MeasuringTool extends EventDispatcher{
 		};
 
 		measure.showDistances = (args.showDistances === null) ? true : args.showDistances;
-
 		measure.showArea = pick(args.showArea, false);
 		measure.showAngles = pick(args.showAngles, false);
 		measure.showCoordinates = pick(args.showCoordinates, false);

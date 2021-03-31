@@ -159,6 +159,7 @@
       					}
       					else if(mutation.target.className === 'coordinates_table_container'){
       						let table = $("#potree_sidebar_container1").find("#sidebar_root").find("#scene_object_properties").find('.measurement_value_table')[0];
+      						if(table.rows.length === 2){    //point measurement
       						let coords = [];
       						for(let i = 1; i < table.rows.length; i++){
       							let objCells = table.rows.item(i).cells;
@@ -179,12 +180,16 @@
       						pointMeasure.setPosition(pointMeasure.points.length-1,newCoords);
       						console.log(pointMeasure);
       						console.log(pointMeasure.position);
+      						}
+      						else if(table.rows.length > 3){    // distance measurement
+      							console.log('distance table')
+      						}
       					}
       					
       					//viewer2.setMoveSpeed(parseFloat(viewer1.getMoveSpeed()));
     				}
     				else if(mutation.type === 'attributes'){
-    					console.log('class: ' + mutation.target.className + ' id: ' + mutation.target.id);
+    					console.log('class: ' + mutation.target.className + ' id: ' + mutation.target.id + ' title: ' + mutation.target.title);
     					if(mutation.target.className === 'ui-slider-handle ui-corner-all ui-state-default ui-state-focus'){
     						viewer2.setEDLOpacity(parseFloat(viewer1.getEDLOpacity()));
     					}
@@ -203,6 +208,9 @@
     						}
     					}
     					else if(mutation.target.id === 'measurements_anchor'){
+    						let table = $("#potree_sidebar_container1").find("#sidebar_root").find("#scene_object_properties").find('#distances_table')[0];
+    						if(typeof table == 'undefined'){
+    						console.log('ab')
     						pointCounter += 1;
     						$("#potree_sidebar_container2").find("#sidebar_root").find('#menu_measurements').next().slideDown();
       						let measurement = viewer2.measuringTool.insertMarker({
@@ -219,6 +227,10 @@
 							let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
 							$.jstree.reference(jsonNode.id).deselect_all();
 							$.jstree.reference(jsonNode.id).select_node(jsonNode.id); 
+							}
+							else{
+								console.log('new distance added');
+							}
 
     					}
     					
@@ -226,11 +238,14 @@
   				}
  		    }	
 
+
  			let observer = new MutationObserver(subscriber);
- 			//let btnStart = document.querySelector('.btnStart');
-    		//let btnStop = document.querySelector('.btnStop');
+ 			
 
     		// These commented out functions are for if the checkbox needs to be replaced by two buttons.
+
+    		//let btnStart = document.querySelector('.btnStart');
+    		//let btnStop = document.querySelector('.btnStop');
 
  			/*function doLogAndBtn(msg) {
   				console.log(msg);
