@@ -32391,6 +32391,7 @@ ENDSEC
 			this.pointString = 'Point';
 			this.pointCounter = 1;
 			this.distanceCounter = 1;
+			this.heightCounter = 1;
 			this.dom = $("#potree_sidebar_container1").find("#sidebar_root");
 		}
 
@@ -32502,8 +32503,9 @@ ENDSEC
 						showArea: false,
 						closed: false,
 						maxMarkers: 2,
-						name: 'Height'});
+						name: 'Height ' + this.heightCounter.toString()});
 
+					this.heightCounter += 1;
 					let measurementsRoot = this.dom.find("#jstree_scene").jstree().get_json("measurements");
 					let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
 					$.jstree.reference(jsonNode.id).deselect_all();
