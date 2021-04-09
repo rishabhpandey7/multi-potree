@@ -274,8 +274,20 @@
  		    }	
 
 
+ 		    function renderSub(mutations){
+ 		    	for (let mutation of mutations){
+ 		    		let vec = viewer1.scene.view.position.clone();
+ 		    		let dir = viewer1.scene.view.direction.clone();
+ 		    		viewer2.scene.view.position.set(vec.x,vec.y,vec.z);
+ 		    		viewer2.scene.view.direction = new THREE.Vector3(dir.x,dir.y,dir.z);
+ 		    		//viewer2.scene.view.lookAt(new THREE.Vector3(vec.x,vec.y,vec.z));
+ 		    		//viewer2.scene.view.direction = new THREE.Vector3(vec.x,vec.y,vec.z);
+ 		    			
+ 		    	}
+ 		    }
+
  			let observer = new MutationObserver(subscriber);
- 			
+ 			let observer2 = new MutationObserver(renderSub);
 
     		// These commented out functions are for if the checkbox needs to be replaced by two buttons.
 
@@ -302,14 +314,19 @@
 
  			//btnStart.addEventListener('click', onbtnStart);
  			//btnStop.addEventListener('click', onbtnStop);
+
  			checkbox1.addEventListener('change',function(){
  				let sidebar = $("#potree_sidebar_container1").find("#sidebar_root");
+ 				let renderArea = $("#potree_render_area1")
  				if(this.checked){
  					//doLogAndBtn('Observing for mutations: STARTED');
     				observer.observe(sidebar[0], options);
+    				observer2.observe(renderArea[0],options);
+    				
  				}
  				else{
  					observer.disconnect();
+ 					observer2.disconnect();
   					//doLogAndBtn('STOPPED observing for mutations');
  				}
  			});
