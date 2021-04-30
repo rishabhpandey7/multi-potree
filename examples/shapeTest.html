@@ -100,7 +100,7 @@
 						let pos = ([long, lat]);
 						let alt = geometry.coordinates[2]?geometry.coordinates[2]:20;
 						s.position.set(...pos, alt);
-						//console.log(pos,alt)
+						console.log(geometry.type + '  :  '  + pos,alt)
 						s.scale.set(0.3, 0.3, 0.05);
 						
 						return s;
@@ -113,7 +113,7 @@
 							let [long, lat] = geometry.coordinates[i];
 							let pos = ([long, lat]);
 
-							//console.log("LSZ: ",pos, geometry.coordinates[i][2])
+							console.log(geometry.type + '  :  '  + "LSZ: ",pos, geometry.coordinates[i][2])
 							
 							let alt = 20;
 							min.x = Math.min(min.x, pos[0]);
@@ -152,7 +152,8 @@
 							let [long, lat] = geometry.coordinates[i];
 							let pos = ([long, lat]);
 
-							//console.log("LSZ: ",pos, geometry.coordinates[i][2])
+							//console.log(geometry.coordinates[i])
+							console.log(geometry.type + '  :  '  + "LSZ: ",pos, geometry.coordinates[i])
 							
 							let alt = geometry.coordinates[i][2]?geometry.coordinates[i][2]:20;
 							min.x = Math.min(min.x, pos[0]);
@@ -224,13 +225,13 @@
 				
 				let shapeNodePM = new THREE.Object3D();
 				viewer1.scene.scene.add(shapeNodePM);
-				Potree.utils.loadShapefileFeatures("../resources/shapefile/S01_2015-10-26.shp", features => {
+				Potree.Utils.loadShapefileFeatures("../resources/shapefiles/south_sorvilier.shp", features => {
 					for(let feature of features){
 						let nodePM = featureToSceneNode(feature, 0xFF0000);
 						shapeNodePM.add(nodePM);	
 					}
 					viewer1.onGUILoaded(() => {
-					let tree = $(`#jstree_scene`);
+					let tree = $("#potree_sidebar_container1").find("#sidebar_root").find("#jstree_scene")
 					let parentNode = "other";
 					//console.log(tree);
 					
@@ -245,6 +246,7 @@
 					
 				});
 			}
+
 
 
 		});
