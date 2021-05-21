@@ -53,6 +53,21 @@
 	
 	<script>
 	
+
+		function download(filename, text) {
+  			var element = document.createElement('a');
+  			element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+  			element.setAttribute('download', filename);
+  			element.style.display = 'none';
+  			document.body.appendChild(element);
+  			element.click();
+
+  			document.body.removeChild(element);
+		}
+		//import fs from "file-system";
+
+        let shpCoordinates = [];
+
 		viewer1 = new Potree.DoubleViewer(document.getElementById("potree_render_area1"));
 
 		viewer1.setEDLEnabled(true);
@@ -68,10 +83,11 @@
 		});
 		
 		// Sigeomvol_total/cloud.js
-		Potree.loadPointCloud("../pointclouds/vol_total/cloud.js", "test1", function(e){
+		Potree.loadPointCloud("../pointclouds/vol_total/cloud.js", "test1", async e => {
 			viewer1.scene.addPointCloud(e.pointcloud);
 			
 			let material = e.pointcloud.material;
+			let pointcloud = e.pointcloud;
 			material.size = 1;
 			material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
 			material.activeAttributeName = "intensity";
@@ -86,9 +102,15 @@
 			**/	
 			
 			{
+					proj4.defs("WGS84", "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
+					proj4.defs("pointcloud", pointcloud.projection);
+					let transform = proj4("WGS84", "pointcloud");
+				 	const loader = new Potree.ShapefileLoader();
+				 	loader.transform = transform;
+				 	//const shpLoader = await loader.load("../resources/shapefile/S01_2015-10-26.shp");
+				 	//console.log(shpLoader.node);
 					let featureToSceneNode = (feature, color) => {
 					let geometry = feature.geometry;
-					
 					var color = color ? color : new THREE.Color(1, 1, 1);
 					
 					if(feature.geometry.type === "Point"){
@@ -153,13 +175,15 @@
 							let pos = ([long, lat]);
 
 							//console.log(geometry.coordinates[i])
-							console.log(geometry.type + '  :  '  + "LSZ: ",pos, geometry.coordinates[i])
+							//console.log(geometry.type + '  :  '  + "LSZ: ",pos, geometry.coordinates[i])
 							
 							let alt = geometry.coordinates[i][2]?geometry.coordinates[i][2]:20;
 							min.x = Math.min(min.x, pos[0]);
 							min.y = Math.min(min.y, pos[1]);
 							min.z = Math.min(min.z, alt);
-							
+							//console.log("x, y: " + pos + " z: " + alt);
+							let tempObj = {x: pos[0], y: pos[1], z: alt};	// Saving current point coordinate of shapefile as object
+							shpCoordinates.push(tempObj);					// Storing point coordinates to array to be written to CSV later
 							coordinates.push(...pos, alt);
 							if(i > 0 && i < geometry.coordinates.length - 1){
 								coordinates.push(...pos, alt);
@@ -172,6 +196,7 @@
 							coordinates[i+2] -= min.z;
 						}
 						
+						//console.log(coordinates);
 						let positions = new Float32Array(coordinates);
 						
 						let lineGeometry = new THREE.BufferGeometry();
@@ -225,11 +250,30 @@
 				
 				let shapeNodePM = new THREE.Object3D();
 				viewer1.scene.scene.add(shapeNodePM);
-				Potree.Utils.loadShapefileFeatures("../resources/shapefiles/south_sorvilier.shp", features => {
+				Potree.Utils.loadShapefileFeatures("../resources/shapefile/S01_2015-10-26.shp", features => {
 					for(let feature of features){
+						console.log(feature)
 						let nodePM = featureToSceneNode(feature, 0xFF0000);
 						shapeNodePM.add(nodePM);	
 					}
+					const csvString = [
+    				[
+      				"X",
+      				"Y",
+      				"Z"
+    				],
+    				...shpCoordinates.map(item => [
+      				item.x,
+      				item.y,
+      				item.z
+    				])
+  					]
+  		 			.map(e => e.join(","))
+  		 			.join("\n");
+
+  		 			download("shpCoordinates.csv",csvString);
+
+
 					viewer1.onGUILoaded(() => {
 					let tree = $("#potree_sidebar_container1").find("#sidebar_root").find("#jstree_scene")
 					let parentNode = "other";
@@ -245,12 +289,24 @@
 					});
 					
 				});
+
+				
 			}
 
 
+		  /*fs.writeFile('Output.txt', csvString, (err) => {
+    		// In case of a error throw err.
+    		if (err) throw err;
+    		console.log('test working');
+			}); 
+		   */
+
+		   
 
 		});
-	
+
+		
+		
 
 	    viewer2 = new Potree.DoubleViewer(document.getElementById("potree_render_area2"));
 
