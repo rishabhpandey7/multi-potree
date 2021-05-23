@@ -102,6 +102,7 @@
 			**/	
 			
 			{
+					// define the transformation from shapefile to point cloud coordinate systems
 					proj4.defs("WGS84", "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
 					proj4.defs("pointcloud", pointcloud.projection);
 					let transform = proj4("WGS84", "pointcloud");
