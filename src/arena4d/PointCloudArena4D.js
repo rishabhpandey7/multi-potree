@@ -586,4 +586,5 @@ export class PointCloudArena4D extends PointCloudTree{
 			return 0;
 		}
 	}
+	
 };

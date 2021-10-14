@@ -69,6 +69,17 @@
 			material.shape = Potree.PointShape.SQUARE;
 			
 			scene.addPointCloud(pointcloud);
+
+			{ // VOLUME visible
+				let volume  = new Potree.BoxVolume();
+				volume.name = "Visible";
+				volume.scale.set(20, 20, 20);
+				volume.position.set(589952, 231406.41, 739.66);
+				volume.clip = true;
+				//volume.visible = false;
+
+				scene.addVolume(volume);
+			}
 			
 			//scene.view.position.set(589974.341, 231698.397, 986.146);
 			//scene.view.lookAt(new THREE.Vector3(589851.587, 231428.213, 715.634));

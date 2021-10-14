@@ -43,11 +43,22 @@
 	</div>
 	
 	<script>
-	
-		window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
-		
+
+		function download(filename, text) {
+  			var element = document.createElement('a');
+  			element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+  			element.setAttribute('download', filename);
+  			element.style.display = 'none';
+  			document.body.appendChild(element);
+  			element.click();
+
+  			document.body.removeChild(element);
+		}
+
+		let shpCoordinates = []
+
+		window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));	
 		viewer.setServer("http://localhost:3000");
-		
 		viewer.setEDLEnabled(false);
 		viewer.setFOV(60);
 		viewer.setPointBudget(3*1000*1000);
@@ -76,63 +87,35 @@
 			scene.view.position.set(697757.85, 3913444.33, 2827.33);
 			scene.view.lookAt(new THREE.Vector3(695231.74, 3916988.94, 87.64));
 			
+			/** 	
+			adding roads shapefile to pointcloud below....
+			**/	
+			
 			{
 				// define the transformation from shapefile to point cloud coordinate systems
-				proj4.defs("WGS84", "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
-				proj4.defs("pointcloud", pointcloud.projection);
-				let transform = proj4("WGS84", "pointcloud");
+					proj4.defs("WGS84", "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
+					proj4.defs("pointcloud", pointcloud.projection);
+					let transform = proj4("WGS84", "pointcloud");
+				 	const loader = new Potree.ShapefileLoader();
+				 	loader.transform = transform;
+				 	//const shpLoader = await loader.load("../resources/shapefile/S01_2015-10-26.shp");
+				 	//console.log(shpLoader.node);
 
-				const loader = new Potree.ShapefileLoader();
-				loader.transform = transform;
+					const shapeNode = new THREE.Object3D();
+					viewer.scene.scene.add(shapeNode);
 
-				// group all shapefile scene nodes into this node
-				const shapeNode = new THREE.Object3D();
-				viewer.scene.scene.add(shapeNode);
-
-
-				// load points.shp
-				const shpPoints = await loader.load("./morro_bay_shp/shape/points.shp");
-				shapeNode.add(shpPoints.node);
-				console.log(shpPoints.node);
-
-				// load natural.shp and change colors to green
-				const shpNatural = await loader.load("./morro_bay_shp/shape/natural.shp");
-				shapeNode.add(shpNatural.node);
-
-				shpNatural.node.traverse(node => {
-					console.log(node)
-					if(node.material){
-						node.material.color.setRGB(0, 1, 0)
-					}
-				});
-				
-
-				// load waterways.shp and change colors to blue
-				const shpWaterways = await loader.load("./morro_bay_shp/shape/waterways.shp");
-				shapeNode.add(shpWaterways.node);
-				window.shpWaterways = shpWaterways;
-
-				shpWaterways.node.traverse(node => {
-					if(node.material){
-						node.material.color.setRGB(0.3, 0.3, 1)
-					}
-				});
-				
-
-				// add roads.shp and change colors to yellow
-				const shpRoads = await loader.load("./morro_bay_shp/shape/roads.shp");
-				shapeNode.add(shpRoads.node);
-
-				shpRoads.node.traverse(node => {
-					if(node.material){
-						node.material.color.setRGB(1, 1, 0)
-					}
-				});
+					const ourSHP = await loader.load("./morro_bay_shp/shape/roads.shp");
+					shapeNode.add(ourSHP.node);
+					ourSHP.node.traverse(node => {
+						if(node.material){
+							node.material.color.setRGB(1, 1, 0);
+						}
+					})
 
 
-				let featureToSceneNode = (feature, color) => {
-				let geometry = feature.geometry;
-					
+					let featureToSceneNode = (feature, color) => {
+						console.log("geometry type: " + feature.geometry.type)
+					let geometry = feature.geometry;
 					var color = color ? color : new THREE.Color(1, 1, 1);
 					
 					if(feature.geometry.type === "Point"){
@@ -148,22 +131,26 @@
 						s.scale.set(0.3, 0.3, 0.05);
 						
 						return s;
-					}else if(geometry.type === "LineString"){
+					} else if(geometry.type === "LineString"){
 						let coordinates = [];
 						
 						let min = new THREE.Vector3(Infinity, Infinity, Infinity);
+						console.log(geometry)
 						
 						for(let i = 0; i < geometry.coordinates.length; i++){
 							let [long, lat] = geometry.coordinates[i];
 							let pos = ([long, lat]);
 
-							console.log(geometry.type + '  :  '  + "LSZ: ",pos, geometry.coordinates[i][2])
+							//console.log(geometry.type + '  :  '  + "LSZ: ",pos, geometry.coordinates[i])
 							
 							let alt = 20;
 							min.x = Math.min(min.x, pos[0]);
 							min.y = Math.min(min.y, pos[1]);
 							min.z = Math.min(min.z, alt);
 							
+							let tmpObj = {x:pos[0], y:pos[1], z:alt}
+							shpCoordinates.push(tmpObj);
+
 							coordinates.push(...pos, alt);
 							if(i > 0 && i < geometry.coordinates.length - 1){
 								coordinates.push(...pos, alt);
@@ -187,7 +174,7 @@
 						
 						return line;
 						
-					}else if(geometry.type === "LineStringZ"){
+					} else if(geometry.type === "LineStringZ"){
 						let coordinates = [];
 						
 						let min = new THREE.Vector3(Infinity, Infinity, Infinity);
@@ -197,13 +184,15 @@
 							let pos = ([long, lat]);
 
 							//console.log(geometry.coordinates[i])
-							console.log(geometry.type + '  :  '  + "LSZ: ",pos, geometry.coordinates[i])
+							//console.log(geometry.type + '  :  '  + "LSZ: ",pos, geometry.coordinates[i])
 							
 							let alt = geometry.coordinates[i][2]?geometry.coordinates[i][2]:20;
 							min.x = Math.min(min.x, pos[0]);
 							min.y = Math.min(min.y, pos[1]);
 							min.z = Math.min(min.z, alt);
-							
+							//console.log("x, y: " + pos + " z: " + alt);
+							let tempObj = {x1: pos[0]-20, x2: pos[0]+20, y1: pos[1]-20, y2: pos[1]+20, z: alt};	// Saving current point coordinate of shapefile as object
+							shpCoordinates.push(tempObj);					// Storing point coordinates to array to be written to CSV later
 							coordinates.push(...pos, alt);
 							if(i > 0 && i < geometry.coordinates.length - 1){
 								coordinates.push(...pos, alt);
@@ -216,6 +205,7 @@
 							coordinates[i+2] -= min.z;
 						}
 						
+						//console.log(coordinates);
 						let positions = new Float32Array(coordinates);
 						
 						let lineGeometry = new THREE.BufferGeometry();
@@ -226,7 +216,7 @@
 						line.position.copy(min);
 						
 						return line;
-					}else if(geometry.type === "Polygon"){
+					} else if(geometry.type === "Polygon"){
 						for(let pc of geometry.coordinates){
 							let coordinates = [];
 							
@@ -262,25 +252,46 @@
 							
 							return line;
 						}
-					}else{
+					} else{
 						console.log("unhandled feature: ", feature);
 					}
 				}
 				
 				let shapeNodePM = new THREE.Object3D();
 				viewer.scene.scene.add(shapeNodePM);
-				Potree.Utils.loadShapefileFeatures("../resources/shapefiles/south_sorvilier.shp", features => {
+				Potree.Utils.loadShapefileFeatures("./morro_bay_shp/shape/roads.shp", features => {
 					for(let feature of features){
+						console.log(feature)
 						let nodePM = featureToSceneNode(feature, 0xFF0000);
 						shapeNodePM.add(nodePM);	
 					}
+					const csvString = [
+    				[
+      				"X",
+      				"Y",
+      				"Z"
+    				],
+    				...shpCoordinates.map(item => [
+      				item.x,
+      				item.y,
+      				item.z
+    				])
+  					]
+  		 			.map(e => e.join(","))
+  		 			.join("\n");
+
+  		 			console.log(shpCoordinates)
+
+  		 			//download("roadSHPCoordinates.csv",csvString);
+
+
 					viewer.onGUILoaded(() => {
-					let tree = $("#potree_sidebar_container").find("#sidebar_root").find("#jstree_scene")
+					let tree = $("#jstree_scene")
 					let parentNode = "other";
 					//console.log(tree);
 					
 					let nodePMID = tree.jstree('create_node', parentNode, { 
-						"text": "Pavement Marking EB", 
+						"text": "Roads Marking EB", 
 						"icon": `${Potree.resourcePath}/icons/triangle.svg`,
 						"data": shapeNodePM
 					}, 
@@ -289,68 +300,27 @@
 					});
 					
 				});
-			
 
-
-
-				// this is necessary so that fat lines are correctly sized
-				viewer.addEventListener("update", () => {
+				viewer.addEventListener("update",() => {
 					const size = viewer.renderer.getSize(new THREE.Vector2());
-
-					shpRoads.setResolution(size.width, size.height);
-					shpWaterways.setResolution(size.width, size.height);
-					shpNatural.setResolution(size.width, size.height);
-					shpPoints.setResolution(size.width, size.height);
+					ourSHP.setResolution(size.width, size.height);
 				});
 
-
 				viewer.onGUILoaded(() => {
-					// Add entry to object list in sidebar
 					let tree = $(`#jstree_scene`);
 					let parentNode = "other";
 
-					let shpPointsID = tree.jstree('create_node', parentNode, { 
-							"text": "points", 
+					let shpID = tree.jstree('create_node', parentNode, { 
+							"text": "Pavement", 
 							"icon": `${Potree.resourcePath}/icons/triangle.svg`,
-							"object": shpPoints.node,
-							"data": shpPoints.node,
+							"object": ourSHP.node,
+							"data": ourSHP.node,
 						}, 
 						"last", false, false);
-					tree.jstree(shpPoints.node.visible ? "check_node" : "uncheck_node", shpPointsID);
-
-					let shpNaterialID = tree.jstree('create_node', parentNode, { 
-							"text": "natural", 
-							"icon": `${Potree.resourcePath}/icons/triangle.svg`,
-							"object": shpNatural.node,
-							"data": shpNatural.node,
-						}, 
-						"last", false, false);
-					tree.jstree(shpNatural.node.visible ? "check_node" : "uncheck_node", shpNaterialID);
-
-					let shpWaterwaysID = tree.jstree('create_node', parentNode, { 
-							"text": "waterways", 
-							"icon": `${Potree.resourcePath}/icons/triangle.svg`,
-							"object": shpWaterways.node,
-							"data": shpWaterways.node,
-						}, 
-						"last", false, false);
-					tree.jstree(shpWaterways.node.visible ? "check_node" : "uncheck_node", shpWaterwaysID);
-
-					let shpRoadsID = tree.jstree('create_node', parentNode, { 
-							"text": "roads", 
-							"icon": `${Potree.resourcePath}/icons/triangle.svg`,
-							"object": shpRoads.node,
-							"data": shpRoads.node,
-						}, 
-						"last", false, false);
-					tree.jstree(shpRoads.node.visible ? "check_node" : "uncheck_node", shpRoadsID);
-
-
+					tree.jstree(ourSHP.node.visible ? "check_node" : "uncheck_node", shpID);
 				});
 				
 			}
-
-			
 				
 		});
 		

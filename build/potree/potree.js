@@ -10046,6 +10046,7 @@ void main() {
 				return 0;
 			}
 		}
+		
 	};
 
 	// Copied from three.js: WebGLRenderer.js
