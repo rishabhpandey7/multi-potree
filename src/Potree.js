@@ -24,6 +24,9 @@ export * from "./XHRFactory.js";
 export * from "./viewer/SaveProject.js";
 export * from "./viewer/LoadProject.js";
 
+export * from "./exporter/BoxExporter.js";
+export * from "./exporter/LASExporter.js";
+
 export * from "./materials/ClassificationScheme.js";
 export * from "./materials/EyeDomeLightingMaterial.js";
 export * from "./materials/Gradients.js";
