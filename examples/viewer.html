@@ -81,6 +81,12 @@
 			volume.clip = true;
 			//volume.visible = false;
 
+			let box = new THREE.Box3();
+			box.set(new THREE.Vector3(589849, 231307, 756), new THREE.Vector3(589869, 231327, 776));
+			console.log("volume : " + volume)
+			console.log("box : " + box)
+
+
 			scene.addVolume(volume);
 
 			setTimeout(() => {
@@ -90,12 +96,36 @@
 				console.log(pointcloud.pcoGeometry.nodes.r.pcoGeometry)
 				console.log(pointcloud.pcoGeometry.nodes.r.geometry)
 
-				let tempBox = new Potree.BoxExporter(volume, pointcloud);
-				let pts = tempBox.getPoints();
-				let buffer = Potree.LASExporter.toLAS(pts);
-				let blob = new Blob([buffer], { type: "application/octet-binary" });
+			//	let tempBox = new Potree.BoxExporter(volume, pointcloud);
+			//	let pts = tempBox.getPoints();
+				let pts = new Potree.Points();
+				let request = pointcloud.getPointsInBox3(box, 6, {
+				'onProgress': (event) => {
+
+					console.log('working...', event.points);
+					pts.add(event.points);	
+				},
+				'onFinish': (event) => {
+					console.log(pts);
+
+
+					let buffer = Potree.LASExporter.toLAS(pts);
+
+					let blob = new Blob([buffer], {type: "application/octet-binary"});
+					saveFile(blob,'sample2.las');
+
+					console.log('finished');
+
+				},
+				'onCancel': () => {
+				}
+
+					});
+
+				//let buffer = Potree.LASExporter.toLAS(pts);
+				//let blob = new Blob([buffer], { type: "application/octet-binary" });
 		
-				saveFile(blob,'sample.las');
+			//	saveFile(blob,'sample.las');
 
 				function saveFile(blob, filename) {
 					if (window.navigator.msSaveOrOpenBlob) {

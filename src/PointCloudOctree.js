@@ -12,7 +12,7 @@ export class PointCloudOctreeNode extends PointCloudTreeNode {
 		//this.children = {};
 		this.children = [];
 		this.sceneNode = null;
-		this.octree = null;
+		this.octree = null;	
 	}
 
 	getNumPoints () {
@@ -130,6 +130,7 @@ export class PointCloudOctree extends PointCloudTree {
 		this.visibleGeometry = [];
 		this.generateDEM = false;
 		this.profileRequests = [];
+		this.downloadRequests = [];
 		this.name = '';
 		this._visible = true;
 
@@ -538,6 +539,13 @@ export class PointCloudOctree extends PointCloudTree {
 
 		return tBox;
 	};
+
+	getPointsInBox3(box, maxDepth, callback) {
+		let request = new Potree.DownloadRequest(this, box, maxDepth, callback);
+		this.downloadRequests.push(request);
+		
+		return request;
+	}
 
 	/**
 	 * returns points inside the profile points
