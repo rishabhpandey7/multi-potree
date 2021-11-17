@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="utf-8">
 	<meta name="description" content="">
@@ -30,263 +31,262 @@
 	<script src="../build/potree/potree.js"></script>
 	<script src="../libs/plasio/js/laslaz.js"></script>
 	<script src="../libs/shapefile/shapefile.js"></script>
-	
+
 	<!-- INCLUDE ADDITIONAL DEPENDENCIES HERE -->
 	<!-- INCLUDE SETTINGS HERE -->
-	
+
 	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
-		<div id="potree_render_area" style="background-image: url('../build/potree/resources/images/background.jpg');"></div>
+		<div id="potree_render_area" style="background-image: url('../build/potree/resources/images/background.jpg');">
+		</div>
 		<div id="potree_sidebar_container"> </div>
 	</div>
-	
-	<script>
-	
 
-        let shpCoordinates = [];
+	<script>
+
+
+		let shpCoordinates = [];
+		let boxes = [];
 		let start = 231;
 		let end = 925;
 		window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
 
 		viewer.setEDLEnabled(true);
 		viewer.setFOV(60);
-		viewer.setPointBudget(1*1000*1000);
+		viewer.setPointBudget(1 * 1000 * 1000);
 		viewer.loadSettingsFromURL();
-		
+
 		viewer.setDescription("Test Viewer");
-		
+
 		viewer.loadGUI(() => {
 			viewer.setLanguage('en');
 			viewer.toggleSidebar();
 		});
-		
+
 		// Sigeomvol_total/cloud.js
-		Potree.loadPointCloud("../pointclouds/SR9_D3_WB_180000_890000_converted/metadata.json", "test1", async e => {
+		Potree.loadPointCloud("../pointclouds/SR9_D3_WB_180000_890000_converted_1/cloud.js", "test1", async e => {
 			viewer.scene.addPointCloud(e.pointcloud);
-			
+
 			let material = e.pointcloud.material;
 			let pointcloud = e.pointcloud;
 			material.size = 1;
 			material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
 			material.activeAttributeName = "intensity";
-			
+
 			e.pointcloud.position.x += 3;
 			e.pointcloud.position.y -= 3;
 			e.pointcloud.position.z += 4;
-			viewer.fitToScreen();	
+			viewer.fitToScreen();
 
 			/** 	
 			adding shapefile to pointcloud below....
-			**/	
-			
+			**/
+
 			{
-					let tempCoords = []
-					// define the transformation from shapefile to point cloud coordinate systems
-					/*proj4.defs("WGS84", "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
-					proj4.defs("pointcloud", pointcloud.projection);
-					let transform = proj4("WGS84", "pointcloud");
-				 	const loader = new Potree.ShapefileLoader();
-				 	loader.transform = transform;*/
-				 	//const shpLoader = await loader.load("../resources/shapefile/S01_2015-10-26.shp");
-				 	//console.log(shpLoader.node);
+				let tempCoords = []
+				// define the transformation from shapefile to point cloud coordinate systems
+				/*proj4.defs("WGS84", "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
+				proj4.defs("pointcloud", pointcloud.projection);
+				let transform = proj4("WGS84", "pointcloud");
+				  const loader = new Potree.ShapefileLoader();
+				  loader.transform = transform;*/
+				//const shpLoader = await loader.load("../resources/shapefile/S01_2015-10-26.shp");
+				//console.log(shpLoader.node);
 
-					let addIntersectingBoxes = () => {
-							let str = 1;
-							for(let i = start; i <= end; i++){
-								let volume  = new Potree.BoxVolume();
-								volume.name = "Volume " + str.toString();
-								str++;
-								volume.scale.set(10, 10, 20);
-								volume.position.set(shpCoordinates[i][0], shpCoordinates[i][1], shpCoordinates[i][2]);
-								volume.clip = true;
-								volume.visible = true;
+				let addIntersectingBoxes = () => {
+					let str = 1;
+					for (let i = start; i <= end; i++) {
+						let volume = new Potree.BoxVolume();
+						volume.name = "Volume " + str.toString();
+						str++;
+						volume.scale.set(10, 10, 20);
+						volume.position.set(shpCoordinates[i][0], shpCoordinates[i][1], shpCoordinates[i][2]);
+						volume.clip = true;
+						volume.visible = true;
 
-								viewer.scene.addVolume(volume);
-							}
+						viewer.scene.addVolume(volume);
 					}
+				}
 
-					let featureToSceneNode = (feature, color) => {
-						console.log("geometry type: " + feature.geometry.type)
+				let featureToSceneNode = (feature, color) => {
 					let geometry = feature.geometry;
 					var color = color ? color : new THREE.Color(1, 1, 1);
-					
-					if(feature.geometry.type === "Point"){
+
+					if (feature.geometry.type === "Point") {
 						let sg = new THREE.SphereGeometry(1, 18, 18);
 						let sm = new THREE.MeshNormalMaterial();
 						let s = new THREE.Mesh(sg, sm);
-						
+
 						let [long, lat] = geometry.coordinates;
 						let pos = ([long, lat]);
-						let alt = geometry.coordinates[2]?geometry.coordinates[2]:20;
+						let alt = geometry.coordinates[2] ? geometry.coordinates[2] : 20;
 						s.position.set(...pos, alt);
-						console.log(geometry.type + '  :  '  + pos,alt)
+						console.log(geometry.type + '  :  ' + pos, alt)
 						s.scale.set(0.3, 0.3, 0.05);
-						
+
 						return s;
-					}else if(geometry.type === "LineString"){
+					} else if (geometry.type === "LineString") {
 						let coordinates = [];
-						
+
 						let min = new THREE.Vector3(Infinity, Infinity, Infinity);
-						
-						for(let i = 0; i < geometry.coordinates.length; i++){
+
+						for (let i = 0; i < geometry.coordinates.length; i++) {
 							let [long, lat] = geometry.coordinates[i];
 							let pos = ([long, lat]);
 
-							console.log(geometry.type + '  :  '  + "LSZ: ",pos, geometry.coordinates[i][2])
-							
+							console.log(geometry.type + '  :  ' + "LSZ: ", pos, geometry.coordinates[i][2])
+
 							let alt = 20;
 							min.x = Math.min(min.x, pos[0]);
 							min.y = Math.min(min.y, pos[1]);
 							min.z = Math.min(min.z, alt);
-							
+
 							coordinates.push(...pos, alt);
-							if(i > 0 && i < geometry.coordinates.length - 1){
+							if (i > 0 && i < geometry.coordinates.length - 1) {
 								coordinates.push(...pos, alt);
 							}
 						}
-						
-						for(let i = 0; i < coordinates.length; i += 3){
-							coordinates[i+0] -= min.x;
-							coordinates[i+1] -= min.y;
-							coordinates[i+2] -= min.z;
+
+						for (let i = 0; i < coordinates.length; i += 3) {
+							coordinates[i + 0] -= min.x;
+							coordinates[i + 1] -= min.y;
+							coordinates[i + 2] -= min.z;
 						}
-						
+
 						let positions = new Float32Array(coordinates);
-						
+
 						let lineGeometry = new THREE.BufferGeometry();
 						lineGeometry.addAttribute("position", new THREE.BufferAttribute(positions, 3));
-						
-						let material = new THREE.LineBasicMaterial( { color: color} );
+
+						let material = new THREE.LineBasicMaterial({ color: color });
 						let line = new THREE.LineSegments(lineGeometry, material);
 						line.position.copy(min);
-						
+
 						return line;
-						
-					}else if(geometry.type === "LineStringZ"){
+
+					} else if (geometry.type === "LineStringZ") {
 						let coordinates = [];
-						
+
 						let min = new THREE.Vector3(Infinity, Infinity, Infinity);
-						console.log(geometry)
-						for(let i = 0; i < geometry.coordinates.length; i++){
+						for (let i = 0; i < geometry.coordinates.length; i++) {
 							let [long, lat] = geometry.coordinates[i];
 							let pos = ([long, lat]);
 
 							//console.log(geometry.coordinates[i])
 							//console.log(geometry.type + '  :  '  + "LSZ: ",pos, geometry.coordinates[i])
-							
-							let alt = geometry.coordinates[i][2]?geometry.coordinates[i][2]:20;
+
+							let alt = geometry.coordinates[i][2] ? geometry.coordinates[i][2] : 20;
 							min.x = Math.min(min.x, pos[0]);
 							min.y = Math.min(min.y, pos[1]);
 							min.z = Math.min(min.z, alt);
 							//console.log("x, y: " + pos + " z: " + alt);
-							let tempObj = {x1: pos[0]-5, x2: pos[0]+5, y1: pos[1]-5, y2: pos[1]+5, z: alt};	// Saving current point coordinate of shapefile as object
+							let tempObj = { x1: pos[0] - 5, x2: pos[0] + 5, y1: pos[1] - 5, y2: pos[1] + 5, z: alt };	// Saving current point coordinate of shapefile as object
 							shpCoordinates.push(tempObj);					// Storing point coordinates to array to be written to CSV later
 							coordinates.push(...pos, alt);
-							if(i > 0 && i < geometry.coordinates.length - 1){
+							if (i > 0 && i < geometry.coordinates.length - 1) {
 								coordinates.push(...pos, alt);
 							}
 						}
-						
-						for(let i = 0; i < coordinates.length; i += 3){
-							coordinates[i+0] -= min.x;
-							coordinates[i+1] -= min.y;
-							coordinates[i+2] -= min.z;
+
+						for (let i = 0; i < coordinates.length; i += 3) {
+							coordinates[i + 0] -= min.x;
+							coordinates[i + 1] -= min.y;
+							coordinates[i + 2] -= min.z;
 						}
-						
+
 						//console.log(coordinates);
 						let positions = new Float32Array(coordinates);
-						
+
 						let lineGeometry = new THREE.BufferGeometry();
 						lineGeometry.addAttribute("position", new THREE.BufferAttribute(positions, 3));
-						
-						let material = new THREE.LineBasicMaterial( { color: color} );
+
+						let material = new THREE.LineBasicMaterial({ color: color });
 						let line = new THREE.LineSegments(lineGeometry, material);
 						line.position.copy(min);
-						
+
 						return line;
-					}else if(geometry.type === "Polygon"){
-						for(let pc of geometry.coordinates){
+					} else if (geometry.type === "Polygon") {
+						for (let pc of geometry.coordinates) {
 							let coordinates = [];
-							
+
 							let min = new THREE.Vector3(Infinity, Infinity, Infinity);
-							for(let i = 0; i < pc.length; i++){
+							for (let i = 0; i < pc.length; i++) {
 								let [long, lat] = pc[i];
 								let pos = ([long, lat]);
-								let alt = pc[i][2]?pc[i][2]:20;
+								let alt = pc[i][2] ? pc[i][2] : 20;
 								min.x = Math.min(min.x, pos[0]);
 								min.y = Math.min(min.y, pos[1]);
 								min.z = Math.min(min.z, alt);
-								
+
 								coordinates.push(...pos, alt);
-								if(i > 0 && i < pc.length - 1){
+								if (i > 0 && i < pc.length - 1) {
 									coordinates.push(...pos, alt);
 								}
 							}
-							
-							for(let i = 0; i < coordinates.length; i += 3){
-								coordinates[i+0] -= min.x;
-								coordinates[i+1] -= min.y;
-								coordinates[i+2] -= min.z;
+
+							for (let i = 0; i < coordinates.length; i += 3) {
+								coordinates[i + 0] -= min.x;
+								coordinates[i + 1] -= min.y;
+								coordinates[i + 2] -= min.z;
 							}
-							
+
 							let positions = new Float32Array(coordinates);
-							
+
 							let lineGeometry = new THREE.BufferGeometry();
 							lineGeometry.addAttribute("position", new THREE.BufferAttribute(positions, 3));
-							
-							let material = new THREE.LineBasicMaterial( { color: color} );
+
+							let material = new THREE.LineBasicMaterial({ color: color });
 							let line = new THREE.LineSegments(lineGeometry, material);
 							line.position.copy(min);
-							
+
 							return line;
 						}
-					}else{
+					} else {
 						console.log("unhandled feature: ", feature);
 					}
 				}
-				
+
 				let shapeNodePM = new THREE.Object3D();
 				viewer.scene.scene.add(shapeNodePM);
 				Potree.Utils.loadShapefileFeatures("../resources/shapefile/S02/S02_2015-06-11.shp", features => {
-					for(let feature of features){
-						console.log(feature)
+					for (let feature of features) {
 						let nodePM = featureToSceneNode(feature, 0xFF0000);
-						shapeNodePM.add(nodePM);	
+						shapeNodePM.add(nodePM);
 					}
 					const csvString = [
-    				[
-      				"X1",
-      				"X2",
-      				"Y1",
-      				"Y2",
-      				"Z"
-    				],
-    				...shpCoordinates.map(item => [
-      				item.x1,
-      				item.x2,
-      				item.y1,
-      				item.y2,
-      				item.z
-    				])
-  					]
-  		 			.map(e => e.join(","))
-  		 			.join("\n");
+						[
+							"X1",
+							"X2",
+							"Y1",
+							"Y2",
+							"Z"
+						],
+						...shpCoordinates.map(item => [
+							item.x1,
+							item.x2,
+							item.y1,
+							item.y2,
+							item.z
+						])
+					]
+						.map(e => e.join(","))
+						.join("\n");
 
-					console.log(shpCoordinates)
-  		 			//download("roadSHPCoordinates.csv",csvString);
+
+					//download("roadSHPCoordinates.csv",csvString);
 
 
 					viewer.onGUILoaded(() => {
-					let tree = $("#potree_sidebar_container").find("#sidebar_root").find("#jstree_scene")
-					let parentNode = "other";
-					//console.log(tree);
-					
-					let nodePMID = tree.jstree('create_node', parentNode, { 
-						"text": "Pavement Marking EB", 
-						"icon": `${Potree.resourcePath}/icons/triangle.svg`,
-						"data": shapeNodePM
-					}, 
-					"last", false, false);
-					tree.jstree(shapeNodePM.visible ? "check_node" : "uncheck_node", nodePMID);
+						let tree = $("#potree_sidebar_container").find("#sidebar_root").find("#jstree_scene")
+						let parentNode = "other";
+						//console.log(tree);
+
+						let nodePMID = tree.jstree('create_node', parentNode, {
+							"text": "Pavement Marking EB",
+							"icon": `${Potree.resourcePath}/icons/triangle.svg`,
+							"data": shapeNodePM
+						},
+							"last", false, false);
+						tree.jstree(shapeNodePM.visible ? "check_node" : "uncheck_node", nodePMID);
 					});
 
 					/* let volume  = new Potree.BoxVolume();
@@ -302,42 +302,101 @@
 
 					//addIntersectingBoxes();
 					let str = 1;
-					for(let i = 233; i <= 935; i++){
-						let volume  = new Potree.BoxVolume();
+					for (let i = 233; i <= 235; i++) {
+						console.log(pointcloud)
+						let volume = new Potree.BoxVolume();
 						volume.name = "Visible" + str.toString();
 						str++;
 						volume.scale.set(10, 10, 20);
-		
+
 						volume.position.set(shpCoordinates[i].x1, shpCoordinates[i].y1, shpCoordinates[i].z);
 
 						volume.clip = true;
 						//volume.visible = false;
 
-						viewer.scene.addVolume(volume);
+						//viewer.scene.addVolume(volume);
+
+						let box = new THREE.Box3();
+						box.set(new THREE.Vector3(shpCoordinates[i].x1, shpCoordinates[i].y1, shpCoordinates[i].z),
+							new THREE.Vector3(shpCoordinates[i].x1 + 10, shpCoordinates[i].y1 + 10, shpCoordinates[i].z + 10));
+						boxes.push(box);
+
 					}
 
-					
 				});
-				
-			} 
+
+			}
+
+			setTimeout(() => {
+				console.log("all event handlers are finished")
+				console.log(boxes)
+				//	let tempBox = new Potree.BoxExporter(volume, pointcloud);	
+				//	let pts = tempBox.getPoints();
+				console.log(pointcloud)
+				console.log(pointcloud.pcoGeometry.root)
+				for(let j = 0; j < boxes.length; j++){
+					let pts = new Potree.Points();
+					let request = pointcloud.getPointsInBox3(boxes[j], 6, {
+						'onProgress': (event) => {
+							console.log('working...', event.points);
+							pts.add(event.points);
+						},
+						'onFinish': (event) => {
+							console.log(pts);
 
 
+							let buffer = Potree.LASExporter.toLAS(pts);
 
-		  /*fs.writeFile('Output.txt', csvString, (err) => {
-    		// In case of a error throw err.
-    		if (err) throw err;
-    		console.log('test working');
-			}); 
-		   */
+							let blob = new Blob([buffer], { type: "application/octet-binary" });
+							saveFile(blob, 'sampleTest.las');
 
-		   
+							console.log('finished');
+
+						},
+						'onCancel': () => {
+						}
+
+					});
+				}
+
+				//let buffer = Potree.LASExporter.toLAS(pts);
+				//let blob = new Blob([buffer], { type: "application/octet-binary" });
+
+				//	saveFile(blob,'sample.las');
+
+				function saveFile(blob, filename) {
+					if (window.navigator.msSaveOrOpenBlob) {
+						window.navigator.msSaveOrOpenBlob(blob, filename);
+					} else {
+						const a = document.createElement('a');
+						document.body.appendChild(a);
+						const url = window.URL.createObjectURL(blob);
+						a.href = url;
+						a.download = filename;
+						a.click();
+						setTimeout(() => {
+							window.URL.revokeObjectURL(url);
+							document.body.removeChild(a);
+						}, 0)
+					}
+				}
+
+			}, 10000);
+
+			/*fs.writeFile('Output.txt', csvString, (err) => {
+			  // In case of a error throw err.
+			  if (err) throw err;
+			  console.log('test working');
+			  }); 
+			 */
 
 		});
-		
-		
+
+
 
 	</script>
-	
-	
-  </body>
+
+
+</body>
+
 </html>

@@ -99,6 +99,8 @@
 			//	let tempBox = new Potree.BoxExporter(volume, pointcloud);
 			//	let pts = tempBox.getPoints();
 				let pts = new Potree.Points();
+				console.log(pointcloud)
+				console.log(pointcloud.pcoGeometry.root)
 				let request = pointcloud.getPointsInBox3(box, 6, {
 				'onProgress': (event) => {
 
@@ -112,7 +114,7 @@
 					let buffer = Potree.LASExporter.toLAS(pts);
 
 					let blob = new Blob([buffer], {type: "application/octet-binary"});
-					saveFile(blob,'sample2.las');
+					//saveFile(blob,'sample2.las');
 
 					console.log('finished');
 
