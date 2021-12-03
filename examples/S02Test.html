@@ -38,6 +38,9 @@
     <!-- INCLUDE SETTINGS HERE -->
 
     <div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
+        <div class="modal"> 
+            <p>Extracting points from imported shapefile, may take upto a couple of minutes...</p>
+        </div>
         <div id="potree_render_area" style="background-image: url('../build/potree/resources/images/background.jpg');">
         </div>
         <div id="potree_sidebar_container"> </div>
@@ -45,10 +48,11 @@
 
     <script>
 
+
+
         let shpCoordinates = [];
         let boxes = [];
-        let start = 231;
-        let end = 925;
+        
         window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
 
         viewer.setEDLEnabled(true);
@@ -92,21 +96,6 @@
                   loader.transform = transform;*/
                 //const shpLoader = await loader.load("../resources/shapefile/S01_2015-10-26.shp");
                 //console.log(shpLoader.node);
-
-                let addIntersectingBoxes = () => {
-                    let str = 1;
-                    for (let i = start; i <= end; i++) {
-                        let volume = new Potree.BoxVolume();
-                        volume.name = "Volume " + str.toString();
-                        str++;
-                        volume.scale.set(10, 10, 20);
-                        volume.position.set(shpCoordinates[i][0], shpCoordinates[i][1], shpCoordinates[i][2]);
-                        volume.clip = true;
-                        volume.visible = true;
-
-                        viewer.scene.addVolume(volume);
-                    }
-                }
 
                 let featureToSceneNode = (feature, color) => {
                     let geometry = feature.geometry;
@@ -180,7 +169,7 @@
                             min.y = Math.min(min.y, pos[1]);
                             min.z = Math.min(min.z, alt);
                             //console.log("x, y: " + pos + " z: " + alt);
-                            let tempObj = { x1: pos[0] - 5, x2: pos[0] + 5, y1: pos[1] - 5, y2: pos[1] + 5, z: alt };	// Saving current point coordinate of shapefile as object
+                            let tempObj = { x: pos[0], y: pos[1], x1: pos[0] - 2, x2: pos[0] + 2, y1: pos[1] - 2, y2: pos[1] + 2, z: alt };	// Saving current point coordinate of shapefile as object
                             shpCoordinates.push(tempObj);					// Storing point coordinates to array to be written to CSV later
                             coordinates.push(...pos, alt);
                             if (i > 0 && i < geometry.coordinates.length - 1) {
@@ -253,26 +242,9 @@
                         let nodePM = featureToSceneNode(feature, 0xFF0000);
                         shapeNodePM.add(nodePM);
                     }
-                    const csvString = [
-                        [
-                            "X1",
-                            "X2",
-                            "Y1",
-                            "Y2",
-                            "Z"
-                        ],
-                        ...shpCoordinates.map(item => [
-                            item.x1,
-                            item.x2,
-                            item.y1,
-                            item.y2,
-                            item.z
-                        ])
-                    ]
-                        .map(e => e.join(","))
-                        .join("\n");
+                    
 
-
+                    console.log(shpCoordinates);
                     //download("roadSHPCoordinates.csv",csvString);
 
 
@@ -298,12 +270,11 @@
 
                     volume.clip = true;
                     //volume.visible = false;
-
+                    (231,925) -> (0, shpCoordinates.length)
                     viewer.scene.addVolume(volume); */
 
-                    //addIntersectingBoxes();
 
-                    for (let i = 231; i <= 925; i++) {
+                    for (let i = 231; i < 925; i++) {
                         /*let volume = new Potree.BoxVolume();
                         volume.name = "Visible"
                         volume.scale.set(10, 10, 20);
@@ -313,8 +284,8 @@
                         //viewer.scene.addVolume(volume);
 
                         let box = new THREE.Box3();
-                        box.set(new THREE.Vector3(shpCoordinates[i].x1, shpCoordinates[i].y1, shpCoordinates[i].z),
-                            new THREE.Vector3(shpCoordinates[i].x1 + 10, shpCoordinates[i].y1 + 10, shpCoordinates[i].z + 20));
+                        box.set(new THREE.Vector3(shpCoordinates[i].x - 2, shpCoordinates[i].y1 - 2, shpCoordinates[i].z - 2),
+                            new THREE.Vector3(shpCoordinates[i].x + 4, shpCoordinates[i].y + 4, shpCoordinates[i].z + 4));
                         boxes.push(box);
 
                     }
@@ -336,6 +307,7 @@
                 for (let j = 0; j < boxes.length; j++) {
                     getCurrentLAS();
                     async function getCurrentLAS() {
+                        document.getElementsByClassName("modal")[0].style.display = "block";
                         let pts = new Potree.Points();
                         let request = await pointcloud.getPointsInBox3(boxes[j], 6, {
                             'onProgress': (event) => {
@@ -354,8 +326,8 @@
                                 console.log('finished');
                                 console.log('progress count:  ' + cnt)
                                 console.log('finished count: ' + cnt2)
-
-                                if (cnt2 == 676) {
+//9712
+                                if (cnt2 == 680) {
                                     console.log(files);
                                     let fName = 'Testfile';
                                     let filesString = '';
@@ -364,12 +336,15 @@
                                         zip.file(fName + f.toString() + '.las', files[f]);
                                         filesString += fName + f.toString() + '.las' + '\n';
                                     }
+                                    console.log('gdu')
                                     let strBlob = new Blob([filesString], { type: "text/plain;charset=utf-8" });
                                     zip.file('textFile.txt', strBlob);
                                     zip.generateAsync({ type: "blob" })
                                         .then(function (blob) {
-                                            saveAs(blob, "helloTest.zip");
-                                        });
+                                            saveAs(blob, "entireSHP.zip");
+                                            document.getElementsByClassName("modal")[0].style.display = "none";
+                                            console.log('bhadwa part-2') 
+                                        });  
 
                                 }
                                 cnt2++;
