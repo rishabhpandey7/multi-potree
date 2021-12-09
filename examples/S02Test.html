@@ -87,16 +87,6 @@
             **/
 
             {
-                let tempCoords = []
-                // define the transformation from shapefile to point cloud coordinate systems
-                /*proj4.defs("WGS84", "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
-                proj4.defs("pointcloud", pointcloud.projection);
-                let transform = proj4("WGS84", "pointcloud");
-                  const loader = new Potree.ShapefileLoader();
-                  loader.transform = transform;*/
-                //const shpLoader = await loader.load("../resources/shapefile/S01_2015-10-26.shp");
-                //console.log(shpLoader.node);
-
                 let featureToSceneNode = (feature, color) => {
                     let geometry = feature.geometry;
                     var color = color ? color : new THREE.Color(1, 1, 1);
@@ -161,14 +151,11 @@
                             let [long, lat] = geometry.coordinates[i];
                             let pos = ([long, lat]);
 
-                            //console.log(geometry.coordinates[i])
-                            //console.log(geometry.type + '  :  '  + "LSZ: ",pos, geometry.coordinates[i])
-
                             let alt = geometry.coordinates[i][2] ? geometry.coordinates[i][2] : 20;
                             min.x = Math.min(min.x, pos[0]);
                             min.y = Math.min(min.y, pos[1]);
                             min.z = Math.min(min.z, alt);
-                            //console.log("x, y: " + pos + " z: " + alt);
+                
                             let tempObj = { x: pos[0], y: pos[1], x1: pos[0] - 2, x2: pos[0] + 2, y1: pos[1] - 2, y2: pos[1] + 2, z: alt };	// Saving current point coordinate of shapefile as object
                             shpCoordinates.push(tempObj);					// Storing point coordinates to array to be written to CSV later
                             coordinates.push(...pos, alt);
@@ -182,8 +169,7 @@
                             coordinates[i + 1] -= min.y;
                             coordinates[i + 2] -= min.z;
                         }
-
-                        //console.log(coordinates);
+                        
                         let positions = new Float32Array(coordinates);
 
                         let lineGeometry = new THREE.BufferGeometry();
@@ -243,10 +229,7 @@
                         shapeNodePM.add(nodePM);
                     }
                     
-
                     console.log(shpCoordinates);
-                    //download("roadSHPCoordinates.csv",csvString);
-
 
                     viewer.onGUILoaded(() => {
                         let tree = $("#potree_sidebar_container").find("#sidebar_root").find("#jstree_scene")
@@ -262,27 +245,8 @@
                         tree.jstree(shapeNodePM.visible ? "check_node" : "uncheck_node", nodePMID);
                     });
 
-                    /* let volume  = new Potree.BoxVolume();
-                    volume.name = "Visible";
-                    volume.scale.set(10, 10, 20);
-	
-                    volume.position.set(shpCoordinates[231].x1, shpCoordinates[231].y1, shpCoordinates[231].z);
 
-                    volume.clip = true;
-                    //volume.visible = false;
-                    (231,925) -> (0, shpCoordinates.length)
-                    viewer.scene.addVolume(volume); */
-
-
-                    for (let i = 231; i < 925; i++) {
-                        /*let volume = new Potree.BoxVolume();
-                        volume.name = "Visible"
-                        volume.scale.set(10, 10, 20);
-                        volume.position.set(shpCoordinates[i].x1, shpCoordinates[i].y1, shpCoordinates[i].z); */
-                        //volume.visible = false;
-
-                        //viewer.scene.addVolume(volume);
-
+                    for (let i = 0; i < shpCoordinates.length; i++) {
                         let box = new THREE.Box3();
                         box.set(new THREE.Vector3(shpCoordinates[i].x - 2, shpCoordinates[i].y1 - 2, shpCoordinates[i].z - 2),
                             new THREE.Vector3(shpCoordinates[i].x + 4, shpCoordinates[i].y + 4, shpCoordinates[i].z + 4));
@@ -296,14 +260,9 @@
 
             setTimeout(() => {
                 console.log("all event handlers are finished")
-                console.log(boxes)
-                //	let tempBox = new Potree.BoxExporter(volume, pointcloud);	
-                //	let pts = tempBox.getPoints();
-                console.log(pointcloud)
-                console.log(pointcloud.pcoGeometry.root)
+                
                 let files = []
-                let cnt = 0;
-                let cnt2 = 0;
+                
                 for (let j = 0; j < boxes.length; j++) {
                     getCurrentLAS();
                     async function getCurrentLAS() {
@@ -311,23 +270,16 @@
                         let pts = new Potree.Points();
                         let request = await pointcloud.getPointsInBox3(boxes[j], 6, {
                             'onProgress': (event) => {
-                                console.log('working...', event.points);
                                 pts.add(event.points);
-                                cnt++;
                             },
                             'onFinish': (event) => {
-                                console.log(pts);
-                                let strName = 'sampleTest' + cnt.toString() + '.las';
-
                                 let buffer = Potree.LASExporter.toLAS(pts);
 
                                 let blob = new Blob([buffer], { type: "application/octet-binary" });
                                 files.push(blob);
-                                console.log('finished');
-                                console.log('progress count:  ' + cnt)
-                                console.log('finished count: ' + cnt2)
-//9712
-                                if (cnt2 == 680) {
+                                                         
+                                if(j == boxes.length-1){
+                                    console.log('end of boxes')
                                     console.log(files);
                                     let fName = 'Testfile';
                                     let filesString = '';
@@ -343,21 +295,17 @@
                                         .then(function (blob) {
                                             saveAs(blob, "entireSHP.zip");
                                             document.getElementsByClassName("modal")[0].style.display = "none";
-                                            console.log('bhadwa part-2') 
                                         });  
-
                                 }
-                                cnt2++;
                             },
                             'onCancel': () => {
-
+                                console.log('request cancelled');
                             }
 
                         });
                     }
                 }
                 
-
             }, 10000);
 
         });
