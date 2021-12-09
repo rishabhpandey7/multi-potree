@@ -3,7 +3,6 @@
 # About
 
 * This is a multi-pointcloud viewer based on Potree, which is a free open-source WebGL based point cloud renderer for large point clouds. It is based on the [TU Wien Scanopy project](https://www.cg.tuwien.ac.at/research/projects/Scanopy/) and research projects [Harvest4D](https://harvest4d.org/), [GCD Doctoral College](https://gcd.tuwien.ac.at/) and [Superhumans](https://www.cg.tuwien.ac.at/research/projects/Superhumans/).
-* Newest information and work in progress is usually available on [twitter](https://twitter.com/m_schuetz)
 * Reference: [Potree: Rendering Large Point Clouds in Web Browsers](https://www.cg.tuwien.ac.at/research/publications/2016/SCHUETZ-2016-POT/SCHUETZ-2016-POT-thesis.pdf)
 
 ![pic0](https://user-images.githubusercontent.com/51262683/107680799-50a21780-6c6c-11eb-8937-23f6759423d3.PNG)
