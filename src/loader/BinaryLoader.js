@@ -63,7 +63,7 @@ export class BinaryLoader{
 		let worker = Potree.workerPool.getWorker(workerPath);
 
 		worker.onmessage = function (e) {
-
+			//console.log(e)
 			let data = e.data;
 			let buffers = data.attributeBuffers;
 			let tightBoundingBox = new THREE.Box3(

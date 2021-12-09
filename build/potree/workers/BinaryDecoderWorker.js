@@ -142,7 +142,7 @@ Potree = {};
 onmessage = function (event) {
 
 	performance.mark("binary-decoder-start");
-	
+
 	let buffer = event.data.buffer;
 	let pointAttributes = event.data.pointAttributes;
 	let numPoints = buffer.byteLength / pointAttributes.byteSize;

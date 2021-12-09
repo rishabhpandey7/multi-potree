@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="utf-8">
 	<meta name="description" content="">
@@ -29,65 +30,134 @@
 	<script src="../libs/jstree/jstree.js"></script>
 	<script src="../build/potree/potree.js"></script>
 	<script src="../libs/plasio/js/laslaz.js"></script>
-	
+
 	<!-- INCLUDE ADDITIONAL DEPENDENCIES HERE -->
 	<!-- INCLUDE SETTINGS HERE -->
-	
+
 	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
-		<div id="potree_render_area" style="background-image: url('../build/potree/resources/images/background.jpg');"></div>
+		<div id="potree_render_area" style="background-image: url('../build/potree/resources/images/background.jpg');">
+		</div>
 		<div id="potree_sidebar_container"> </div>
 	</div>
 
-	
-	
+
+
 	<script>
-	
+
 		window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
-		
+
 		viewer.setEDLEnabled(true);
 		viewer.setFOV(60);
-		viewer.setPointBudget(1*1000*1000);
+		viewer.setPointBudget(1 * 1000 * 1000);
 		viewer.loadSettingsFromURL();
-		
+
 		viewer.setDescription("Point cloud courtesy of <a target='_blank' href='https://www.sigeom.ch/'>sigeom sa</a>");
-		
+
 		viewer.loadGUI(() => {
 			viewer.setLanguage('en');
 			$("#menu_tools").next().show();
 			$("#menu_clipping").next().show();
 			viewer.toggleSidebar();
 		});
-		
+
 		// Load and add point cloud to scene
 		Potree.loadPointCloud("../pointclouds/vol_total/cloud.js", "sigeom.sa", e => {
 			let scene = viewer.scene;
 			let pointcloud = e.pointcloud;
-			
+			//console.log(pointcloud)
+			//console.log(scene)
 			let material = pointcloud.material;
 			material.size = 1;
 			material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
 			material.shape = Potree.PointShape.SQUARE;
-			
+
 			scene.addPointCloud(pointcloud);
 
-			{ // VOLUME visible
-				let volume  = new Potree.BoxVolume();
-				volume.name = "Visible";
-				volume.scale.set(20, 20, 20);
-				volume.position.set(589952, 231406.41, 739.66);
-				volume.clip = true;
-				//volume.visible = false;
+			// VOLUME visible
+			let volume = new Potree.BoxVolume();
+			volume.name = "Visible";
+			volume.scale.set(20, 20, 20);
+			volume.position.set(589849, 231307, 756);
+			volume.clip = true;
+			//volume.visible = false;
 
-				scene.addVolume(volume);
-			}
-			
+			let box = new THREE.Box3();
+			box.set(new THREE.Vector3(589849, 231307, 756), new THREE.Vector3(589869, 231327, 776));
+			console.log("volume : " + volume)
+			console.log("box : " + box)
+
+
+			scene.addVolume(volume);
+
+			setTimeout(() => {
+				console.log("all event handlers are finished")
+
+				console.log(pointcloud.pcoGeometry.nodes.r)
+				console.log(pointcloud.pcoGeometry.nodes.r.pcoGeometry)
+				console.log(pointcloud.pcoGeometry.nodes.r.geometry)
+
+			//	let tempBox = new Potree.BoxExporter(volume, pointcloud);
+			//	let pts = tempBox.getPoints();
+				let pts = new Potree.Points();
+				console.log(pointcloud)
+				console.log(pointcloud.pcoGeometry.root)
+				let request = pointcloud.getPointsInBox3(box, 6, {
+				'onProgress': (event) => {
+
+					console.log('working...', event.points);
+					pts.add(event.points);	
+				},
+				'onFinish': (event) => {
+					console.log(pts);
+
+
+					let buffer = Potree.LASExporter.toLAS(pts);
+
+					let blob = new Blob([buffer], {type: "application/octet-binary"});
+					//saveFile(blob,'sample2.las');
+
+					console.log('finished');
+
+				},
+				'onCancel': () => {
+				}
+
+					});
+
+				//let buffer = Potree.LASExporter.toLAS(pts);
+				//let blob = new Blob([buffer], { type: "application/octet-binary" });
+		
+			//	saveFile(blob,'sample.las');
+
+				function saveFile(blob, filename) {
+					if (window.navigator.msSaveOrOpenBlob) {
+						window.navigator.msSaveOrOpenBlob(blob, filename);
+					} else {
+						const a = document.createElement('a');
+						document.body.appendChild(a);
+						const url = window.URL.createObjectURL(blob);
+						a.href = url;
+						a.download = filename;
+						a.click();
+						setTimeout(() => {
+							window.URL.revokeObjectURL(url);
+							document.body.removeChild(a);
+						}, 0)
+					}
+				}
+
+			}, 6000);
+
 			//scene.view.position.set(589974.341, 231698.397, 986.146);
 			//scene.view.lookAt(new THREE.Vector3(589851.587, 231428.213, 715.634));
 			viewer.fitToScreen();
 		});
-		
+
+
+
 	</script>
-	
-	
-  </body>
+
+
+</body>
+
 </html>

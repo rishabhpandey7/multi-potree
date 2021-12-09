@@ -7832,7 +7832,7 @@ void main() {
 			//this.children = {};
 			this.children = [];
 			this.sceneNode = null;
-			this.octree = null;
+			this.octree = null;	
 		}
 
 		getNumPoints () {
@@ -7950,6 +7950,7 @@ void main() {
 			this.visibleGeometry = [];
 			this.generateDEM = false;
 			this.profileRequests = [];
+			this.downloadRequests = [];
 			this.name = '';
 			this._visible = true;
 
@@ -8358,6 +8359,13 @@ void main() {
 
 			return tBox;
 		};
+
+		getPointsInBox3(box, maxDepth, callback) {
+			let request = new Potree.DownloadRequest(this, box, maxDepth, callback);
+			this.downloadRequests.push(request);
+			
+			return request;
+		}
 
 		/**
 		 * returns points inside the profile points
@@ -9070,6 +9078,15 @@ void main() {
 			for (let profileRequest of pointcloud.profileRequests) {
 				profileRequest.update();
 
+				let duration = performance.now() - start;
+				if(duration > 5){
+					break;
+				}
+			}
+
+			for (let downloadRequest of pointcloud.downloadRequests) {
+				downloadRequest.update();
+		
 				let duration = performance.now() - start;
 				if(duration > 5){
 					break;
@@ -11497,6 +11514,312 @@ void main() {
 
 	};
 
+	class DownloadRequest {
+	constructor (pointcloud, box, maxDepth, callback) {
+	this.pointcloud = pointcloud;
+	this.box = box;
+	this.maxDepth = maxDepth || Number.MAX_VALUE;
+	this.callback = callback;
+	this.temporaryResult = new Points();
+	this.pointsServed = 0;
+	this.highestLevelServed = 0;
+
+		this.priorityQueue = new BinaryHeap(function (x) { return 1 / x.weight; });
+
+		this.initialize();
+	}
+
+	nodeIntersectsBox (node, box){
+
+	    let bbWorld = node.boundingBox.clone().applyMatrix4(this.pointcloud.matrixWorld);
+
+	    return bbWorld.intersectsBox(box);
+
+	}
+
+	initialize () {
+		this.priorityQueue.push({node: this.pointcloud.pcoGeometry.root, weight: Infinity});
+	};
+
+	// traverse the node and add intersecting descendants to queue
+	traverse (node) {
+		let stack = [];
+		for (let i = 0; i < 8; i++) {
+			let child = node.children[i];
+			if (child && this.nodeIntersectsBox(child, this.box)) {
+				stack.push(child);
+			}
+		}
+
+		while (stack.length > 0) {
+			let node = stack.pop();
+			let weight = node.boundingSphere.radius;
+
+			this.priorityQueue.push({node: node, weight: weight});
+
+
+			// add children that intersect the cutting plane
+			if (node.level < this.maxDepth) {
+				for (let i = 0; i < 8; i++) {
+					let child = node.children[i];
+					if (child && this.nodeIntersectsBox(child, this.box)) {
+						stack.push(child);
+					}
+				}
+			}
+		}
+	}
+
+	update(){
+		if(!this.updateGeneratorInstance){
+			this.updateGeneratorInstance = this.updateGenerator();
+		}
+
+		let result = this.updateGeneratorInstance.next();
+		if(result.done){
+			this.updateGeneratorInstance = null;
+		}
+	}
+
+	* updateGenerator(){
+		// load nodes in queue
+		// if hierarchy expands, also load nodes from expanded hierarchy
+		// once loaded, add data to this.points and remove node from queue
+		// only evaluate 1-50 nodes per frame to maintain responsiveness
+
+		let start = performance.now();
+
+		let maxNodesPerUpdate = 1;
+		let intersectedNodes = [];
+
+		for (let i = 0; i < Math.min(maxNodesPerUpdate, this.priorityQueue.size()); i++) {
+			let element = this.priorityQueue.pop();
+			let node = element.node;
+
+			if(node.level > this.maxDepth){
+				continue;
+			}
+
+			if (node.loaded) {
+				// add points to result
+				intersectedNodes.push(node);
+				exports.lru.touch(node);
+				this.highestLevelServed = Math.max(node.getLevel(), this.highestLevelServed);
+
+				let doTraverse = (node.level % node.pcoGeometry.hierarchyStepSize) === 0 && node.hasChildren;
+				doTraverse = doTraverse || node.getLevel() === 0;
+				if (doTraverse) {
+					this.traverse(node);
+				}
+			} else {
+				node.load();
+				this.priorityQueue.push(element);
+			}
+		}
+
+		if (intersectedNodes.length > 0) {
+
+			for(let done of this.getPointsInsideBox(intersectedNodes, this.temporaryResult)){
+				if(!done){
+					//console.log("updateGenerator yields");
+					yield false;
+				}
+			}
+			if (this.temporaryResult.numPoints > 100) {
+				this.pointsServed += this.temporaryResult.numPoints;
+				this.callback.onProgress({request: this, points: this.temporaryResult});
+				this.temporaryResult = new Points();
+			}
+		}
+
+		if (this.priorityQueue.size() === 0) {
+			// we're done! inform callback and remove from pending requests
+
+			if (this.temporaryResult.numPoints > 0) {
+				this.pointsServed += this.temporaryResult.numPoints;
+				this.callback.onProgress({request: this, points: this.temporaryResult});
+				this.temporaryResult = new Points();
+			}
+
+			this.callback.onFinish({request: this});
+
+			let index = this.pointcloud.downloadRequests.indexOf(this);
+			if (index >= 0) {
+				this.pointcloud.downloadRequests.splice(index, 1);
+			}
+		}
+
+		yield true;
+	};
+
+	* getAccepted(numPoints, node, matrix, points){
+		let checkpoint = performance.now();
+
+		let accepted = new Uint32Array(numPoints);
+		let acceptedPositions = new Float32Array(numPoints * 3);
+		let numAccepted = 0;
+
+		let pos = new THREE.Vector3();
+		let svp = new THREE.Vector3();
+
+		let view = new Float32Array(node.geometry.attributes.position.array);
+
+		for (let i = 0; i < numPoints; i++) {
+
+			pos.set(
+				view[i * 3 + 0],
+				view[i * 3 + 1],
+				view[i * 3 + 2]);
+		
+			pos.applyMatrix4(matrix);
+
+			if (this.box.containsPoint(pos)) {
+
+				accepted[numAccepted] = i;
+	            points.boundingBox.expandByPoint(pos);
+
+
+	            acceptedPositions[3 * numAccepted + 0] = pos.x;
+				acceptedPositions[3 * numAccepted + 1] = pos.y;
+				acceptedPositions[3 * numAccepted + 2] = pos.z;
+
+				numAccepted++;
+			}
+
+			if((i % 1000) === 0){
+				let duration = performance.now() - checkpoint;
+				if(duration > 4){
+					//console.log(`getAccepted yield after ${duration}ms`);
+					yield false;
+					checkpoint = performance.now();
+				}
+			}
+		}
+
+		accepted = accepted.subarray(0, numAccepted);
+		acceptedPositions = acceptedPositions.subarray(0, numAccepted * 3);
+
+		//let end = performance.now();
+		//let duration = end - start;
+		//console.log("accepted duration ", duration)
+
+		//console.log(`getAccepted finished`);
+
+		yield [accepted, acceptedPositions];
+	}
+
+	* getPointsInsideBox(nodes, target) {
+		let checkpoint = performance.now();
+
+		for (let node of nodes) {
+			let numPoints = node.numPoints;
+			let geometry = node.geometry;
+
+			if(!numPoints){
+				continue;
+			}
+
+			{ // skip if current node doesn't intersect current box
+				let intersects = this.nodeIntersectsBox(node, this.box);
+
+				if(!intersects){
+					continue;
+				}
+			}
+
+			let points = new Points();
+
+			let nodeMatrix = new THREE.Matrix4().makeTranslation(...node.boundingBox.min.toArray());
+
+			let matrix = new THREE.Matrix4().multiplyMatrices(
+				this.pointcloud.matrixWorld, nodeMatrix);
+
+			let accepted = null;
+			let acceptedPositions = null;
+			for(let result of this.getAccepted(numPoints, node, matrix, points)){
+				if(!result){
+					let duration = performance.now() - checkpoint;
+					//console.log(`getPointsInsideProfile yield after ${duration}ms`);
+					yield false;
+					checkpoint = performance.now();
+				}else {
+					[accepted, acceptedPositions] = result;
+				}
+			}
+
+			let duration = performance.now() - checkpoint;
+			if(duration > 4){
+				//console.log(`getPointsInsideProfile yield after ${duration}ms`);
+				yield false;
+				checkpoint = performance.now();
+			}
+
+			points.data.position = acceptedPositions;
+
+			let relevantAttributes = Object.keys(geometry.attributes).filter(a => !["position", "indices"].includes(a));
+			for(let attributeName of relevantAttributes){
+
+				let attribute = geometry.attributes[attributeName];
+				let numElements = attribute.array.length / numPoints;
+
+				if(numElements !== parseInt(numElements)){
+					debugger;
+				}
+
+				let Type = attribute.array.constructor;
+
+				let filteredBuffer = new Type(numElements * accepted.length);
+
+				let source = attribute.array;
+				let target = filteredBuffer;
+
+				for(let i = 0; i < accepted.length; i++){
+
+					let index = accepted[i];
+
+					let start = index * numElements;
+					let end = start + numElements;
+					let sub = source.subarray(start, end);
+
+					target.set(sub, i * numElements);
+				}
+
+				points.data[attributeName] = filteredBuffer;
+			}
+
+			points.numPoints = accepted.length;
+
+			target.add(points);
+		}
+
+		//console.log(`getPointsInsideProfile finished`);
+		yield true;
+	};
+
+	finishLevelThenCancel () {
+		if (this.cancelRequested) {
+			return;
+		}
+
+		this.maxDepth = this.highestLevelServed;
+		this.cancelRequested = true;
+
+		//console.log(`maxDepth: ${this.maxDepth}`);
+	};
+
+	cancel () {
+		this.callback.onCancel();
+
+		this.priorityQueue = new BinaryHeap(function (x) { return 1 / x.weight; });
+
+		let index = this.pointcloud.profileRequests.indexOf(this);
+		if (index >= 0) {
+			this.pointcloud.profileRequests.splice(index, 1);
+		}
+	};
+
+	}
+
 	class ProfileData {
 		constructor (profile) {
 			this.profile = profile;
@@ -13110,6 +13433,310 @@ void main() {
 		await Promise.all(pointcloudPromises);
 	}
 
+	class BoxExporter {
+	  /*let debugGeometry = new THREE.SphereGeometry(0.01, 4, 4);
+	  let debugMaterial = new THREE.MeshLambertMaterial({
+	    color: '#8e44ad',
+	    transparent: true,
+	    opacity: 0.5
+	  }); */
+
+	  constructor(box, pointCloud) {
+	    const basePoint = box.position.clone();
+
+	    this.box = new THREE.Box3();
+	    this.box.expandByPoint(basePoint.clone().add(
+	        new THREE.Vector3(
+	          (box.scale.x / 2) * -1,
+	          (box.scale.y / 2) * -1,
+	          (box.scale.z / 2) * -1,
+	        )
+	      )
+	    );
+
+	    this.box.expandByPoint(basePoint.clone().add(
+	        new THREE.Vector3(
+	          (box.scale.x / 2),
+	          (box.scale.y / 2),
+	          (box.scale.z / 2),
+	        )
+	      )
+	    );
+	    // this.box.applyMatrix4(box.matrixWorld);
+	    console.log('this.box', this.box);
+	    this.pointCloud = pointCloud;
+	  }
+
+	  debugPoint(x, y, z) {
+	    //console.log('point', {x, y ,z});
+	    const sphere = new THREE.Mesh(this.debugGeometry, this.debugMaterial);
+	    // object position
+	    sphere.position.set(x, y, z);
+	    window.viewer.scene.scene.add(sphere);
+	  }
+
+	  debugPoints(points) {
+	    for (let i = 0; i < points.numPoints; i++) {
+	      this.debugPoint(points.data.position[i * 3], points.data.position[i * 3 + 1], points.data.position[i * 3 + 2]);
+	    }
+	  }
+
+	  getPoints(){
+	    const target = new Points();
+	    const generator = this.getIntersectingChildren(this.pointCloud.pcoGeometry.nodes.r);
+	    let iterator = generator.next();
+
+	    while (!iterator.done) {
+	      if (!iterator.done) {
+	        try {
+	          target.add(this.getChildPoints(iterator.value));
+	        } catch (e) {
+	          console.error('error getChildPoints', e);
+	        }
+	      }
+	      iterator = generator.next();
+	    }
+	    console.log('target', target);
+	    //this.debugPoints(target);
+	    return target;
+	  }
+
+	  filterPoints(node, points) {
+	    const matrix = new THREE.Matrix4().multiplyMatrices(
+	        this.pointCloud.matrixWorld,
+	      new THREE.Matrix4().makeTranslation(...node.boundingBox.min.toArray())
+	    );
+	    let accepted = new Uint32Array(node.numPoints);
+	    let acceptedPositions = new Float32Array(node.numPoints * 3);
+	    let numAccepted = 0;
+
+	    let pos = new THREE.Vector3();
+
+	    let view = new Float32Array(node.geometry.attributes.position.array);
+	    for (let i = 0; i < node.numPoints; i++) {
+	      pos.set(
+	        view[i * 3],
+	        view[i * 3 + 1],
+	        view[i * 3 + 2]);
+
+	      pos.applyMatrix4(matrix);
+
+	      if (this.box.containsPoint(pos)) {
+	        accepted[numAccepted] = i;
+	        points.boundingBox.expandByPoint(pos);
+
+	        acceptedPositions[3 * numAccepted] = pos.x;
+	        acceptedPositions[3 * numAccepted + 1] = pos.y;
+	        acceptedPositions[3 * numAccepted + 2] = pos.z;
+	        //this.debugPoint(pos.x, pos.y, pos.z);
+	        numAccepted++;
+	      }
+	    }
+	    return {
+	      accepted: accepted.subarray(0, numAccepted),
+	      acceptedPositions: acceptedPositions.subarray(0, numAccepted * 3)
+	    };
+	  }
+
+	  getChildPoints(child) {
+	    const points = new Points();
+	    const filteredPoints = this.filterPoints(child, points);
+	    const relevantAttributes = Object.keys(child.geometry.attributes).filter(a => !["position", "indices"].includes(a));
+
+	    points.data.position = filteredPoints.acceptedPositions;
+
+	    for (let attributeName of relevantAttributes) {
+
+	      let attribute = child.geometry.attributes[attributeName];
+	      let numElements = attribute.array.length / child.numPoints;
+	      let Type = attribute.array.constructor;
+
+	      let filteredBuffer = new Type(numElements * filteredPoints.accepted.length);
+
+	      let source = attribute.array;
+	      let target = filteredBuffer;
+
+	      for (let i = 0; i < filteredPoints.accepted.length; i++) {
+
+	        let index = filteredPoints.accepted[i];
+
+	        let start = index * numElements;
+	        let end = start + numElements;
+	        let sub = source.subarray(start, end);
+
+	        target.set(sub, i * numElements);
+	      }
+
+	      points.data[attributeName] = filteredBuffer;
+	    }
+
+	    points.numPoints = filteredPoints.accepted.length;
+	    return points;
+	  }
+
+	  * getIntersectingChildren(child) {
+	    if (this.nodeIntersectsBox(child, this.box) && child.hasChildren) {
+	      yield child;
+
+	      for (let subChild of Object.values(child.children)) { 
+	        yield* this.getIntersectingChildren(subChild);
+	      }
+	    }   
+	  }
+
+	  nodeIntersectsBox(child, box) {
+	    return child.boundingBox.clone().applyMatrix4(this.pointCloud.matrixWorld).intersectsBox(box);
+	  }
+	}
+
+	class LASExporter {
+		static toLAS (points) {
+			// TODO Unused: let string = '';
+
+			let boundingBox = points.boundingBox;
+			let offset = boundingBox.min.clone();
+			let diagonal = boundingBox.min.distanceTo(boundingBox.max);
+			let scale = new THREE.Vector3(0.001, 0.001, 0.001);
+			if (diagonal > 1000 * 1000) {
+				scale = new THREE.Vector3(0.01, 0.01, 0.01);
+			} else {
+				scale = new THREE.Vector3(0.001, 0.001, 0.001);
+			}
+
+			let setString = function (string, offset, buffer) {
+				let view = new Uint8Array(buffer);
+
+				for (let i = 0; i < string.length; i++) {
+					let charCode = string.charCodeAt(i);
+					view[offset + i] = charCode;
+				}
+			};
+
+			let buffer = new ArrayBuffer(227 + 28 * points.numPoints);
+			let view = new DataView(buffer);
+			let u8View = new Uint8Array(buffer);
+			// let u16View = new Uint16Array(buffer);
+
+			setString('LASF', 0, buffer);
+			u8View[24] = 1;
+			u8View[25] = 2;
+
+			// system identifier o:26 l:32
+
+			// generating software o:58 l:32
+			setString('Potree 1.7', 58, buffer);
+
+			// file creation day of year o:90 l:2
+			// file creation year o:92 l:2
+
+			// header size o:94 l:2
+			view.setUint16(94, 227, true);
+
+			// offset to point data o:96 l:4
+			view.setUint32(96, 227, true);
+
+			// number of letiable length records o:100 l:4
+
+			// point data record format 104 1
+			u8View[104] = 2;
+
+			// point data record length 105 2
+			view.setUint16(105, 28, true);
+
+			// number of point records 107 4
+			view.setUint32(107, points.numPoints, true);
+
+			// number of points by return 111 20
+
+			// x scale factor 131 8
+			view.setFloat64(131, scale.x, true);
+
+			// y scale factor 139 8
+			view.setFloat64(139, scale.y, true);
+
+			// z scale factor 147 8
+			view.setFloat64(147, scale.z, true);
+
+			// x offset 155 8
+			view.setFloat64(155, offset.x, true);
+
+			// y offset 163 8
+			view.setFloat64(163, offset.y, true);
+
+			// z offset 171 8
+			view.setFloat64(171, offset.z, true);
+
+			// max x 179 8
+			view.setFloat64(179, boundingBox.max.x, true);
+
+			// min x 187 8
+			view.setFloat64(187, boundingBox.min.x, true);
+
+			// max y 195 8
+			view.setFloat64(195, boundingBox.max.y, true);
+
+			// min y 203 8
+			view.setFloat64(203, boundingBox.min.y, true);
+
+			// max z 211 8
+			view.setFloat64(211, boundingBox.max.z, true);
+
+			// min z 219 8
+			view.setFloat64(219, boundingBox.min.z, true);
+
+			let boffset = 227;
+			for (let i = 0; i < points.numPoints; i++) {
+
+				let px = points.data.position[3 * i + 0];
+				let py = points.data.position[3 * i + 1];
+				let pz = points.data.position[3 * i + 2];
+
+				let ux = parseInt((px - offset.x) / scale.x);
+				let uy = parseInt((py - offset.y) / scale.y);
+				let uz = parseInt((pz - offset.z) / scale.z);
+
+				view.setUint32(boffset + 0, ux, true);
+				view.setUint32(boffset + 4, uy, true);
+				view.setUint32(boffset + 8, uz, true);
+
+				if (points.data.intensity) {
+					view.setUint16(boffset + 12, (points.data.intensity[i]), true);
+				}
+
+				let rt = 0;
+				if (points.data.returnNumber) {
+					rt += points.data.returnNumber[i];
+				}
+				if (points.data.numberOfReturns) {
+					rt += (points.data.numberOfReturns[i] << 3);
+				}
+				view.setUint8(boffset + 14, rt);
+
+				if (points.data.classification) {
+					view.setUint8(boffset + 15, points.data.classification[i]);
+				}
+				// scan angle rank
+				// user data
+				// point source id
+				if (points.data.pointSourceID) {
+					view.setUint16(boffset + 18, points.data.pointSourceID[i]);
+				}
+
+				if (points.data.rgba) {
+					let rgba = points.data.rgba;
+					view.setUint16(boffset + 20, (rgba[4 * i + 0] * 255), true);
+					view.setUint16(boffset + 22, (rgba[4 * i + 1] * 255), true);
+					view.setUint16(boffset + 24, (rgba[4 * i + 2] * 255), true);
+				}
+
+				boffset += 28;
+			}
+
+			return buffer;
+		}
+		
+	}
+
 	//
 	// Algorithm by Christian Boucheny
 	// shader code taken and adapted from CloudCompare
@@ -13545,7 +14172,7 @@ void main() {
 			let worker = Potree.workerPool.getWorker(workerPath);
 
 			worker.onmessage = function (e) {
-
+				//console.log(e)
 				let data = e.data;
 				let buffers = data.attributeBuffers;
 				let tightBoundingBox = new THREE.Box3(
@@ -20240,154 +20867,6 @@ void main() {
 			return string;
 		}
 	};
-
-	class LASExporter {
-		static toLAS (points) {
-			// TODO Unused: let string = '';
-
-			let boundingBox = points.boundingBox;
-			let offset = boundingBox.min.clone();
-			let diagonal = boundingBox.min.distanceTo(boundingBox.max);
-			let scale = new THREE.Vector3(0.001, 0.001, 0.001);
-			if (diagonal > 1000 * 1000) {
-				scale = new THREE.Vector3(0.01, 0.01, 0.01);
-			} else {
-				scale = new THREE.Vector3(0.001, 0.001, 0.001);
-			}
-
-			let setString = function (string, offset, buffer) {
-				let view = new Uint8Array(buffer);
-
-				for (let i = 0; i < string.length; i++) {
-					let charCode = string.charCodeAt(i);
-					view[offset + i] = charCode;
-				}
-			};
-
-			let buffer = new ArrayBuffer(227 + 28 * points.numPoints);
-			let view = new DataView(buffer);
-			let u8View = new Uint8Array(buffer);
-			// let u16View = new Uint16Array(buffer);
-
-			setString('LASF', 0, buffer);
-			u8View[24] = 1;
-			u8View[25] = 2;
-
-			// system identifier o:26 l:32
-
-			// generating software o:58 l:32
-			setString('Potree 1.7', 58, buffer);
-
-			// file creation day of year o:90 l:2
-			// file creation year o:92 l:2
-
-			// header size o:94 l:2
-			view.setUint16(94, 227, true);
-
-			// offset to point data o:96 l:4
-			view.setUint32(96, 227, true);
-
-			// number of letiable length records o:100 l:4
-
-			// point data record format 104 1
-			u8View[104] = 2;
-
-			// point data record length 105 2
-			view.setUint16(105, 28, true);
-
-			// number of point records 107 4
-			view.setUint32(107, points.numPoints, true);
-
-			// number of points by return 111 20
-
-			// x scale factor 131 8
-			view.setFloat64(131, scale.x, true);
-
-			// y scale factor 139 8
-			view.setFloat64(139, scale.y, true);
-
-			// z scale factor 147 8
-			view.setFloat64(147, scale.z, true);
-
-			// x offset 155 8
-			view.setFloat64(155, offset.x, true);
-
-			// y offset 163 8
-			view.setFloat64(163, offset.y, true);
-
-			// z offset 171 8
-			view.setFloat64(171, offset.z, true);
-
-			// max x 179 8
-			view.setFloat64(179, boundingBox.max.x, true);
-
-			// min x 187 8
-			view.setFloat64(187, boundingBox.min.x, true);
-
-			// max y 195 8
-			view.setFloat64(195, boundingBox.max.y, true);
-
-			// min y 203 8
-			view.setFloat64(203, boundingBox.min.y, true);
-
-			// max z 211 8
-			view.setFloat64(211, boundingBox.max.z, true);
-
-			// min z 219 8
-			view.setFloat64(219, boundingBox.min.z, true);
-
-			let boffset = 227;
-			for (let i = 0; i < points.numPoints; i++) {
-
-				let px = points.data.position[3 * i + 0];
-				let py = points.data.position[3 * i + 1];
-				let pz = points.data.position[3 * i + 2];
-
-				let ux = parseInt((px - offset.x) / scale.x);
-				let uy = parseInt((py - offset.y) / scale.y);
-				let uz = parseInt((pz - offset.z) / scale.z);
-
-				view.setUint32(boffset + 0, ux, true);
-				view.setUint32(boffset + 4, uy, true);
-				view.setUint32(boffset + 8, uz, true);
-
-				if (points.data.intensity) {
-					view.setUint16(boffset + 12, (points.data.intensity[i]), true);
-				}
-
-				let rt = 0;
-				if (points.data.returnNumber) {
-					rt += points.data.returnNumber[i];
-				}
-				if (points.data.numberOfReturns) {
-					rt += (points.data.numberOfReturns[i] << 3);
-				}
-				view.setUint8(boffset + 14, rt);
-
-				if (points.data.classification) {
-					view.setUint8(boffset + 15, points.data.classification[i]);
-				}
-				// scan angle rank
-				// user data
-				// point source id
-				if (points.data.pointSourceID) {
-					view.setUint16(boffset + 18, points.data.pointSourceID[i]);
-				}
-
-				if (points.data.rgba) {
-					let rgba = points.data.rgba;
-					view.setUint16(boffset + 20, (rgba[4 * i + 0] * 255), true);
-					view.setUint16(boffset + 22, (rgba[4 * i + 1] * 255), true);
-					view.setUint16(boffset + 24, (rgba[4 * i + 2] * 255), true);
-				}
-
-				boffset += 28;
-			}
-
-			return buffer;
-		}
-		
-	}
 
 	function copyMaterial(source, target){
 
@@ -38692,6 +39171,7 @@ ENDSEC
 	exports.AnimationPath = AnimationPath;
 	exports.Annotation = Annotation;
 	exports.Box3Helper = Box3Helper;
+	exports.BoxExporter = BoxExporter;
 	exports.BoxVolume = BoxVolume;
 	exports.CameraAnimation = CameraAnimation;
 	exports.CameraMode = CameraMode;
@@ -38703,6 +39183,7 @@ ENDSEC
 	exports.Compass = Compass;
 	exports.DeviceOrientationControls = DeviceOrientationControls;
 	exports.DoubleViewer = DoubleViewer;
+	exports.DownloadRequest = DownloadRequest;
 	exports.EarthControls = EarthControls;
 	exports.ElevationGradientRepeat = ElevationGradientRepeat;
 	exports.Enum = Enum;
@@ -38724,6 +39205,7 @@ ENDSEC
 	exports.Images360 = Images360;
 	exports.Images360Loader = Images360Loader;
 	exports.KeyCodes = KeyCodes;
+	exports.LASExporter = LASExporter;
 	exports.LRU = LRU;
 	exports.LRUItem = LRUItem;
 	exports.LengthUnits = LengthUnits;

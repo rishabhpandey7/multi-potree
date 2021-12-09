@@ -15,6 +15,7 @@ export * from "./PointCloudTree.js";
 export * from "./Points.js";
 export * from "./Potree_update_visibility.js";
 export * from "./PotreeRenderer.js";
+export * from "./DownloadRequest.js";
 export * from "./ProfileRequest.js";
 export * from "./TextSprite.js";
 export * from "./utils.js";
@@ -23,6 +24,9 @@ export * from "./WorkerPool.js";
 export * from "./XHRFactory.js";
 export * from "./viewer/SaveProject.js";
 export * from "./viewer/LoadProject.js";
+
+export * from "./exporter/BoxExporter.js";
+export * from "./exporter/LASExporter.js";
 
 export * from "./materials/ClassificationScheme.js";
 export * from "./materials/EyeDomeLightingMaterial.js";
