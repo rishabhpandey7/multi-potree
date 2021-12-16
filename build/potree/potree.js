@@ -23772,7 +23772,7 @@ ENDSEC
 			}
 			this.cleanupTasks = [];
 			this.container.empty();
-
+			console.log(object);
 			if(object instanceof PointCloudTree){
 				this.setPointCloud(object);
 			}else if(object instanceof Measure || object instanceof Profile || object instanceof Volume){

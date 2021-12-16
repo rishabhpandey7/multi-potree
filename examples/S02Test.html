@@ -38,12 +38,20 @@
     <!-- INCLUDE SETTINGS HERE -->
 
     <div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
-        <div class="modal"> 
+        <div class="modal">
             <p>Extracting points from imported shapefile, may take upto a couple of minutes...</p>
         </div>
         <div id="potree_render_area" style="background-image: url('../build/potree/resources/images/background.jpg');">
         </div>
         <div id="potree_sidebar_container"> </div>
+        <div style="display: flex; flex-direction: row; position: absolute;">
+            <div style="float: left; margin: 5px;">
+                <input id="download_csv" type="button" value="download shp csv" /><br>
+            </div>
+            <div style="float: right; margin: 5px;">
+                <input id="download_las" type="button" value="download shp las" /><br>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -52,7 +60,7 @@
 
         let shpCoordinates = [];
         let boxes = [];
-        
+
         window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
 
         viewer.setEDLEnabled(true);
@@ -155,8 +163,8 @@
                             min.x = Math.min(min.x, pos[0]);
                             min.y = Math.min(min.y, pos[1]);
                             min.z = Math.min(min.z, alt);
-                
-                            let tempObj = { x: pos[0], y: pos[1], x1: pos[0] - 2, x2: pos[0] + 2, y1: pos[1] - 2, y2: pos[1] + 2, z: alt };	// Saving current point coordinate of shapefile as object
+
+                            let tempObj = { x: pos[0], y: pos[1], z: alt };	// Saving current point coordinate of shapefile as object
                             shpCoordinates.push(tempObj);					// Storing point coordinates to array to be written to CSV later
                             coordinates.push(...pos, alt);
                             if (i > 0 && i < geometry.coordinates.length - 1) {
@@ -169,7 +177,7 @@
                             coordinates[i + 1] -= min.y;
                             coordinates[i + 2] -= min.z;
                         }
-                        
+
                         let positions = new Float32Array(coordinates);
 
                         let lineGeometry = new THREE.BufferGeometry();
@@ -228,13 +236,10 @@
                         let nodePM = featureToSceneNode(feature, 0xFF0000);
                         shapeNodePM.add(nodePM);
                     }
-                    
-                    console.log(shpCoordinates);
 
                     viewer.onGUILoaded(() => {
                         let tree = $("#potree_sidebar_container").find("#sidebar_root").find("#jstree_scene")
                         let parentNode = "other";
-                        //console.log(tree);
 
                         let nodePMID = tree.jstree('create_node', parentNode, {
                             "text": "Pavement Marking EB",
@@ -248,10 +253,9 @@
 
                     for (let i = 0; i < shpCoordinates.length; i++) {
                         let box = new THREE.Box3();
-                        box.set(new THREE.Vector3(shpCoordinates[i].x - 2, shpCoordinates[i].y1 - 2, shpCoordinates[i].z - 2),
+                        box.set(new THREE.Vector3(shpCoordinates[i].x - 2, shpCoordinates[i].y - 2, shpCoordinates[i].z - 2),
                             new THREE.Vector3(shpCoordinates[i].x + 4, shpCoordinates[i].y + 4, shpCoordinates[i].z + 4));
                         boxes.push(box);
-
                     }
 
                 });
@@ -259,58 +263,88 @@
             }
 
             setTimeout(() => {
-                console.log("all event handlers are finished")
-                
                 let files = []
-                
-                for (let j = 0; j < boxes.length; j++) {
-                    getCurrentLAS();
-                    async function getCurrentLAS() {
-                        document.getElementsByClassName("modal")[0].style.display = "block";
-                        let pts = new Potree.Points();
-                        let request = await pointcloud.getPointsInBox3(boxes[j], 6, {
-                            'onProgress': (event) => {
-                                pts.add(event.points);
-                            },
-                            'onFinish': (event) => {
-                                let buffer = Potree.LASExporter.toLAS(pts);
+                let csvButton = $('#download_csv');
+                let lasButton = $('#download_las');
+                csvButton.click(() => {
+                    downloadCSV();
+                });
+                lasButton.click(() => {
+                    downloadLAS();
+                });
 
-                                let blob = new Blob([buffer], { type: "application/octet-binary" });
-                                files.push(blob);
-                                                         
-                                if(j == boxes.length-1){
-                                    console.log('end of boxes')
-                                    console.log(files);
-                                    let fName = 'Testfile';
-                                    let filesString = '';
-                                    let zip = new JSZip();
-                                    for (let f = 0; f < files.length; f++) {
-                                        zip.file(fName + f.toString() + '.las', files[f]);
-                                        filesString += fName + f.toString() + '.las' + '\n';
+                function downloadCSV() {
+                    let csvString = [
+                        [
+                            "Feature's X coord",
+                            "Feature's Y coord",
+                            "Feature's Z coord"
+                        ],
+                        ...shpCoordinates.map(feature => [
+                            feature.x,
+                            feature.y,
+                            feature.z
+                        ])
+                    ].map(e => e.join(","))
+                        .join("\n");
+
+                    var a = window.document.createElement('a');
+                    a.href = window.URL.createObjectURL(new Blob([csvString], { type: 'text/csv' }));
+                    a.download = 'shapefile.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+
+                function downloadLAS() {
+                    for (let j = 0; j < boxes.length; j++) {
+                        getCurrentLAS();
+                        async function getCurrentLAS() {
+                            document.getElementsByClassName("modal")[0].style.display = "block";
+                            let pts = new Potree.Points();
+                            let request = await pointcloud.getPointsInBox3(boxes[j], 6, {
+                                'onProgress': (event) => {
+                                    console.log(event.points);
+                                    pts.add(event.points);
+                                },
+                                'onFinish': (event) => {
+                                    let buffer = Potree.LASExporter.toLAS(pts);
+                                    console.log('finished box : ' + event.points);                             
+                                    let blob = new Blob([buffer], { type: "application/octet-binary" });
+                                    files.push(blob);
+
+                                    if (j == boxes.length - 1) {
+                                        console.log('end of boxes')
+                                        console.log(files);
+                                        let fName = 'Testfile';
+                                        let filesString = '';
+                                        let zip = new JSZip();
+                                        for (let f = 0; f < files.length; f++) {
+                                            zip.file(fName + f.toString() + '.las', files[f]);
+                                            filesString += fName + f.toString() + '.las' + '\n';
+                                        }
+                                        console.log('gdu')
+                                        let strBlob = new Blob([filesString], { type: "text/plain;charset=utf-8" });
+                                        zip.file('textFile.txt', strBlob);
+                                        zip.generateAsync({ type: "blob" })
+                                            .then(function (blob) {
+                                                saveAs(blob, "entireSHP.zip");
+                                                document.getElementsByClassName("modal")[0].style.display = "none";
+                                            });
                                     }
-                                    console.log('gdu')
-                                    let strBlob = new Blob([filesString], { type: "text/plain;charset=utf-8" });
-                                    zip.file('textFile.txt', strBlob);
-                                    zip.generateAsync({ type: "blob" })
-                                        .then(function (blob) {
-                                            saveAs(blob, "entireSHP.zip");
-                                            document.getElementsByClassName("modal")[0].style.display = "none";
-                                        });  
+                                },
+                                'onCancel': () => {
+                                    console.log('request cancelled');
                                 }
-                            },
-                            'onCancel': () => {
-                                console.log('request cancelled');
-                            }
 
-                        });
+                            });
+                        }
                     }
                 }
-                
-            }, 10000);
+
+            }, 9000);
 
         });
-
-
 
     </script>
 
