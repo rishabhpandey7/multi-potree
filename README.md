@@ -43,7 +43,7 @@ For LAS, a ZIP file containing LAS files for every feature of the shapefile inte
 ```
 lasmerge -i "pathToLASFiles/*.las" -o out.las
 ```
-
+Link to video demonstration of the entire Shapefile extraction workflow: https://youtu.be/lLYaAIE6oK4 . **Note** - Please duplicate the S02Test.html file and then add your own pointcloud and shapefile to it. This video just modifies S02Test.html only for demonstration purposes. S02Test.html is meant to be a template file containing the SHP extraction implementation.
 
 ### Convert Point Clouds to Potree Format
 
