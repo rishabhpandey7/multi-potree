@@ -39,7 +39,9 @@ To run the standard Potree single viewer, go to http://localhost:1234/examples/ 
 To run the double pointcloud viewer, go to the test.html example in the examples folder. Then, duplicate and rename the file and modify the pointcloud paths in the html file to your own point cloud. 
 
 To import a shapefile on a pointcloud and extract its feature coordinates or get the intersection of the shapefile and pointcloud in LAS format, go to S02Test.html example in the examples folder. Then, duplicate and rename the file and modify the pointcloud paths in the html file to your own point cloud and also modify the shapefile path mentioned in the Potree.Utils.loadShapefileFeatures function to the path to your own shapefile. Then, run the example file in the browser and get the CSV or LAS by clicking on the respective button at the top of the sidebar.
-For LAS, a ZIP file containing LAS files for every feature of the shapefile intersecting the pointcloud will be downloaded. In order to combine these LAS files into the subsequent final LAS file for the entire shapefile, you will need to use LASMerge from [LASTools](https://github.com/LAStools/LAStools). 
+For LAS, a ZIP file containing LAS files for every feature of the shapefile intersecting the pointcloud will be downloaded. In order to combine these LAS files into the subsequent final LAS file for the entire shapefile, you will need to use LASMerge from [LASTools](https://github.com/LAStools/LAStools). To combine the LAS files using LASMerge, go to the bin directory in LASTools and type this in the console:
+`lasmerge -i "pathToLASFiles/*.las" -o out.las`
+
 
 ### Convert Point Clouds to Potree Format
 
